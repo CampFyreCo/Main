@@ -1,0 +1,23 @@
+{
+  "name": "main",
+  "version": "1.0.0",
+  "description": "A place to hang out and chat with your friends.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CampFyreApp/Main.git"
+  },
+  "author": "Donovan_DMC",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/CampFyreApp/Main/issues"
+  },
+  "homepage": "https://github.com/CampFyreApp/Main#readme",
+  "devDependencies": {
+    "@uwu-codes/eslint-config": "^1.0.5",
+    "@uwu-codes/tsconfig": "^1.0.1"
+  }
+}
