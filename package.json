@@ -4,20 +4,54 @@
   "description": "A place to hang out and chat with your friends.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "update": "npm update && npm update -D",
+    "build": "rm -rf build && tsc && echo Build Finished",
+    "start:dev": "npm run build && node index.js",
+    "start": "node index.js",
+    "script:setup-db": "ts-node scripts/setup-db.ts",
+    "script:gen-auth-token": "ts-node scripts/gen-auth-token.ts"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/CampFyreApp/Main.git"
+    "url": "git+https://github.com/CampFyreCo/Main.git"
   },
   "author": "Donovan_DMC",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/CampFyreApp/Main/issues"
+    "url": "https://github.com/CampFyreCo/Main/issues"
   },
-  "homepage": "https://github.com/CampFyreApp/Main#readme",
+  "homepage": "https://github.com/CampFyreCo/Main#readme",
   "devDependencies": {
+    "@types/bcrypt": "^3.0.0",
+    "@types/deasync": "^0.1.1",
+    "@types/express": "^4.17.11",
+    "@types/express-session": "^1.17.3",
+    "@types/fs-extra": "^9.0.8",
+    "@types/identicon.js": "^2.3.0",
+    "@types/ioredis": "^4.22.0",
+    "@types/mongodb": "^3.6.8",
+    "@types/morgan": "^1.9.2",
+    "@types/node": "^14.14.31",
+    "@types/on-finished": "^2.3.1",
+    "@types/ua-parser-js": "^0.7.35",
     "@uwu-codes/eslint-config": "^1.0.5",
-    "@uwu-codes/tsconfig": "^1.0.1"
+    "@uwu-codes/tsconfig": "^1.0.1",
+    "leeks.js": "^0.1.1"
+  },
+  "dependencies": {
+    "@uwu-codes/utils": "^1.0.15",
+    "bcrypt": "^5.0.1",
+    "deasync": "^0.1.21",
+    "express": "^4.17.1",
+    "express-session": "^1.17.1",
+    "fs-extra": "^9.1.0",
+    "identicon.js": "^2.3.3",
+    "ioredis": "^4.23.0",
+    "mongodb": "^3.6.4",
+    "morgan": "^1.10.0",
+    "on-finished": "^2.3.0",
+    "pug": "^3.0.2",
+    "source-map-support": "^0.5.19",
+    "ua-parser-js": "^0.7.24"
   }
 }
