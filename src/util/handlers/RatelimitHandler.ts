@@ -83,7 +83,10 @@ export default class RateLimitHandler {
 	static async consume(type: RateLimitTypes, id: string, amount = 1) {
 		const t = Date.now();
 		const v = await this.get(type, id);
-		if (v.remaining > 0) await Redis.set(`ratelimiting:${type}:${id}`, JSON.stringify({ creation: v.creation || t, usage: v.usage + amount }));
+		if (v.remaining > 0) {
+			const ttl = await Redis.ttl(`ratelimiting:${type}:${id}`);
+			await Redis.setex(`ratelimiting:${type}:${id}`, ttl, JSON.stringify({ creation: v.creation || t, usage: v.usage + amount }));
+		}
 		const n = await this.get(type, id);
 		if (v.remaining > 0) n.usable = true;
 		return n;

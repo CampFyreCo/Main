@@ -1,5 +1,5 @@
 import { User } from "../../../db/models";
-import { RATE_LIMITED, USER as UserErrors } from "../../../util/Constants/Errors";
+import { USER as UserErrors } from "../../../util/Constants/Errors";
 import RateLimitHandler from "../../../util/handlers/RatelimitHandler";
 import express from "express";
 
