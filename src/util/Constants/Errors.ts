@@ -61,6 +61,26 @@ export const USER = {
 	NOT_MODIFIED: {
 		code: 41008,
 		mesage: "No modifications were found."
+	},
+	HANDLE_OR_EMAL_REQUIRED: {
+		code: 41009,
+		message: "A handle or email is required."
+	},
+	NO_USER_FOUND: {
+		code: 41010,
+		message: "No user was found with that email or handle."
+	},
+	NO_PASSWORD: {
+		code: 41011,
+		message: "That user account does not have a password set."
+	},
+	HANDLE_REQUIRED: {
+		code: 41012,
+		message: "A handle is required."
+	},
+	EMAIL_REQUIRED: {
+		code: 41013,
+		message: "An email is required."
 	}
 };
 

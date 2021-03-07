@@ -3,6 +3,7 @@ import { USER as UserErrors } from "../../../util/Constants/Errors";
 import RateLimitHandler from "../../../util/handlers/RatelimitHandler";
 import { EMAIL, HANDLE, NAME, PASSWORD } from "../../../util/Constants/General";
 import Functions from "../../../util/Functions";
+import Mailer from "../../../util/handlers/email/Mailer";
 import express from "express";
 import { AnyObject } from "@uwu-codes/utils";
 
@@ -80,7 +81,6 @@ app
 			passwordChange = true;
 		}
 
-		console.log("a", d);
 		for (const j in d) {
 			if (Object.prototype.hasOwnProperty.call(d, j)) {
 				const k = j as keyof typeof d;
@@ -88,13 +88,13 @@ app
 			}
 		}
 
-		console.log("b", d);
 		if (JSON.stringify(d) === "{}" && passwordChange === false) return res.status(400).json({
 			success: false,
 			error: UserErrors.NOT_MODIFIED
 		});
 
 		await req.data.user.edit(d);
+		if (d.email) await Mailer.sendConfirmation(req.data.user);
 
 		return res.status(200).json({
 			success: true,
