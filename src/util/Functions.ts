@@ -1,5 +1,5 @@
 // / <reference path="./@types/Express.d.ts" />
-import { USER_FLAGS } from "./Constants";
+import { USER_FLAGS } from "./Constants/General";
 import * as fs from "fs-extra";
 import crypto from "crypto";
 

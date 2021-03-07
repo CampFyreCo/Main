@@ -1,5 +1,5 @@
 import db, { mdb } from "..";
-import { BCRYPT_ROUNDS } from "../../util/Constants";
+import { BCRYPT_ROUNDS } from "../../util/Constants/General";
 import Snowflake from "../../util/Snowflake";
 import Functions from "../../util/Functions";
 import { GetUserOptions } from "../../util/@types/Database";
@@ -183,6 +183,7 @@ export default class User {
 	 */
 	toJSON(privateProps: true): PrivateUser & { createdAt: string; };
 	toJSON(privateProps?: false): PublicUser & { createdAt: string; };
+	toJSON(privateProps?: boolean): (PrivateUser | PublicUser) & { createdAt: string; };
 	toJSON(privateProps = false) {
 		const t = Functions.toJSON(
 			this,

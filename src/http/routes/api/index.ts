@@ -1,4 +1,4 @@
-import AuthHandler from "../../../util/AuthHandler";
+import AuthHandler from "../../../util/handlers/AuthHandler";
 import express from "express";
 
 const app = express.Router();

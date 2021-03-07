@@ -27,3 +27,8 @@ export const USER = {
 		message: "Unknown user."
 	}
 };
+
+export const RATE_LIMITED = {
+	code: 429,
+	message: "You're doing that action too fast."
+};

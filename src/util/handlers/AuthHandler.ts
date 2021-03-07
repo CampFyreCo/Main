@@ -1,7 +1,7 @@
-// / <reference path="./@types/Express.d.ts" />
-import Functions from "./Functions";
-import { AUTHORIZATION as AuthorizationErrors } from "./Errors";
-import { User } from "../db/models";
+// / <reference path="../@types/Express.d.ts" />
+import Functions from "../Functions";
+import { AUTHORIZATION as AuthorizationErrors } from "../Constants/Errors";
+import { User } from "../../db/models";
 import express from "express";
 
 export type AuthLevel = "none" | "verifiedEmail" | "staff" | "admin";

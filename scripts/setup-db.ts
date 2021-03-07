@@ -1,6 +1,6 @@
 import { mdb } from "../src/db";
 import { User } from "../src/db/models";
-import { USER_FLAGS } from "../src/util/Constants";
+import { USER_FLAGS } from "../src/util/Constants/General";
 
 const drop = true;
 

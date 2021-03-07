@@ -9,7 +9,8 @@
     "start:dev": "npm run build && node index.js",
     "start": "node index.js",
     "script:setup-db": "ts-node scripts/setup-db.ts",
-    "script:gen-auth-token": "ts-node scripts/gen-auth-token.ts"
+    "script:gen-auth-token": "ts-node scripts/gen-auth-token.ts",
+    "script:test-rate-limits": "ts-node scripts/test-rate-limits.ts"
   },
   "repository": {
     "type": "git",
