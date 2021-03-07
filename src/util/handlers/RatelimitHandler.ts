@@ -84,8 +84,16 @@ export default class RateLimitHandler {
 		const t = Date.now();
 		const v = await this.get(type, id);
 		if (v.remaining > 0) {
-			const ttl = await Redis.ttl(`ratelimiting:${type}:${id}`);
-			await Redis.setex(`ratelimiting:${type}:${id}`, ttl, JSON.stringify({ creation: v.creation || t, usage: v.usage + amount }));
+			let ttl = await Redis.pttl(`ratelimiting:${type}:${id}`);
+			// -2 = does not exist
+			// -1 = exists, no ttl
+			// https://redis.io/commands/TTL
+			if (ttl === -2) ttl = RateLimits[type][1];
+			else if (ttl === -1) {
+				await Redis.del(`ratelimiting:${type}:${id}`);
+				ttl = RateLimits[type][1];
+			}
+			if (ttl !== 0) await Redis.psetex(`ratelimiting:${type}:${id}`, ttl, JSON.stringify({ creation: v.creation || t, usage: v.usage + amount }));
 		}
 		const n = await this.get(type, id);
 		if (v.remaining > 0) n.usable = true;

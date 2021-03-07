@@ -6,8 +6,9 @@
   "scripts": {
     "update": "npm update && npm update -D",
     "build": "rm -rf build && tsc && echo Build Finished",
-    "start:dev": "npm run build && node index.js",
+    "start:dev": "npm run build && DEBUG=ioredis:* node index.js",
     "start": "node index.js",
+    "check-circular": "dpdm --tree=false --circular=true --warning=false -T .",
     "script:setup-db": "ts-node scripts/setup-db.ts",
     "script:gen-auth-token": "ts-node scripts/gen-auth-token.ts",
     "script:test-rate-limits": "ts-node scripts/test-rate-limits.ts"
@@ -37,6 +38,7 @@
     "@types/ua-parser-js": "^0.7.35",
     "@uwu-codes/eslint-config": "^1.0.5",
     "@uwu-codes/tsconfig": "^1.0.1",
+    "dpdm": "^3.6.0",
     "leeks.js": "^0.1.1"
   },
   "dependencies": {

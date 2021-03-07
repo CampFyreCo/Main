@@ -4,7 +4,6 @@ import morgan from "morgan";
 import session from "express-session";
 import * as http from "http";
 import * as https from "https";
-
 const app = express();
 
 app

@@ -25,7 +25,7 @@ class Database {
 			db: config.services.redis.db,
 			enableReadyCheck: true,
 			autoResendUnfulfilledCommands: true,
-			connectionName: "YiffyGraphics"
+			connectionName: "CampFyre"
 		});
 
 		r

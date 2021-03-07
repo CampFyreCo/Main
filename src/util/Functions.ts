@@ -1,6 +1,9 @@
 // / <reference path="./@types/Express.d.ts" />
 import { USER_FLAGS } from "./Constants/General";
+import { SERVER as ServerErrors } from "./Constants/Errors";
+import { User } from "../db/models";
 import * as fs from "fs-extra";
+import { Request, Response } from "express";
 import crypto from "crypto";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -157,4 +160,17 @@ export default class Functions {
 
 		return next();
 	} */
+
+	// I hate it but it works
+	static verifyUser<T extends Request>(req: T, res: Response, obj: T["data"]["user"]): obj is User {
+		// doing constructor.name because of circular dependencies with User
+		if (!!obj && obj.constructor.name === "User") return true;
+		else {
+			res.status(500).json({
+				success: false,
+				error: ServerErrors.UNKNOWN
+			});
+			return false;
+		}
+	}
 }
