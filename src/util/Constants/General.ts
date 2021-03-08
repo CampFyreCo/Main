@@ -60,3 +60,4 @@ export interface Connection {
 
 export const CONNECTIONS = ConnectionsHandler.VALID;
 export const MAX_SAMESITE_CONNECTIONS = 3;
+export const MAX_CONNECTIONS = 15;

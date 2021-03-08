@@ -1,6 +1,6 @@
 import { User } from "../../../db/models";
 import RateLimitHandler from "../../../util/handlers/RatelimitHandler";
-import { CONNECTIONS, EMAIL, HANDLE, MAX_AVATAR_SIZE, MAX_SAMESITE_CONNECTIONS, NAME, PASSWORD } from "../../../util/Constants/General";
+import { CONNECTIONS, EMAIL, HANDLE, MAX_AVATAR_SIZE, MAX_CONNECTIONS, MAX_SAMESITE_CONNECTIONS, NAME, PASSWORD } from "../../../util/Constants/General";
 import Functions from "../../../util/Functions";
 import Mailer from "../../../util/handlers/email/Mailer";
 import config from "../../../config";
@@ -178,6 +178,10 @@ app
 		if (!(CONNECTIONS as Readonly<Array<string>>).includes(b.type)) return res.status(422).json({
 			success: false,
 			error: Functions.formatError("USER", "CONNECTION_TYPE_INVALID")
+		});
+		if (req.data.user.connections.length > MAX_CONNECTIONS) return res.status(400).json({
+			success: false,
+			error: Functions.formatError("USER", "CONNECTION_LIMIT")
 		});
 		const c = req.data.user.connections.filter(con => con.type === b.type);
 		if (c.length >= MAX_SAMESITE_CONNECTIONS) return res.status(400).json({

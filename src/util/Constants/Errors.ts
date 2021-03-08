@@ -118,20 +118,24 @@ export const USER = {
 		code: 41022,
 		message: "The connection type \"%TYPE%\" is invalid."
 	},
-	CONNECTION_TYPE_LIMIT: {
+	CONNECTION_LIMIT: {
 		code: 41023,
+		message: "You have reached the connection limit."
+	},
+	CONNECTION_TYPE_LIMIT: {
+		code: 41024,
 		message: "You have hit the limit for connections of that type."
 	},
 	CONNECTION_ALREADY_LISTED: {
-		code: 41024,
+		code: 41025,
 		message: "That connection has already been added."
 	},
 	INVALID_CONNECTION_VISIBILITY: {
-		code: 41025,
+		code: 41026,
 		message: "The connection visibility \"%VIS%\" is invalid."
 	},
 	INVALID_CONNECTION_ID: {
-		code: 41026,
+		code: 41027,
 		message: "The connection id \"%ID%\" is not valid."
 	}
 } as const;
