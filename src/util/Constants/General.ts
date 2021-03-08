@@ -12,6 +12,8 @@ export const HANDLE = /^[a-z\d_-]{2,16}$/i; // Max 64^16 handles
 export const NAME = /^.{2,}$/i;
 // 5 Megabytes, ~2048x2048
 export const MAX_AVATAR_SIZE = 5e+6;
+export const MIN_IMAGE_SIZE = 16;
+export const MAX_IMAGE_SIZE = 2048;
 export const EXTERNAL_LINK_TYPES = [
 
 ] as const;

@@ -1,3 +1,4 @@
+import { MAX_IMAGE_SIZE, MIN_IMAGE_SIZE } from "./Constants/General";
 import config from "../config";
 import * as fs from "fs-extra";
 import { Request, Response, NextFunction } from "express";
@@ -18,7 +19,7 @@ export default function ImageConverter(staticPath: string, cache: string) {
 		if (!fs.existsSync(p)) return res.status(404).end();
 		// || because of NaN
 		const size = Number(url.searchParams.get("size")) || 512;
-		if (size > 4096 || size < 16 || (Math.floor(Math.log2(size)) !== Math.ceil(Math.log2(size)))) return res.status(422).end();
+		if (size < MIN_IMAGE_SIZE || size > MAX_IMAGE_SIZE || (Math.floor(Math.log2(size)) !== Math.ceil(Math.log2(size)))) return res.status(422).end();
 		const rStat = fs.statSync(p);
 		const cpath = `${cache}${pn}${fn}-${size}.${ex}`;
 		fs.mkdirpSync(path.dirname(cpath));
