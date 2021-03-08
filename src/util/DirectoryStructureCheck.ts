@@ -7,7 +7,10 @@ export default function DirectoryStructureCheck() {
 		config.dir.logs,
 		config.dir.static.base,
 		config.dir.static.avatar,
-		config.dir.config.extra
+		config.dir.config.extra,
+		config.dir.views.base,
+		config.dir.views.partials,
+		config.dir.views.templates
 	];
 
 	dir.map((d) => {

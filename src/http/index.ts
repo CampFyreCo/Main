@@ -8,7 +8,7 @@ const app = express();
 
 app
 	.set("view engine", "pug")
-	.set("views", `${config.dir.base}/src/http/views/templates`)
+	.set("views", config.dir.views.templates)
 	.use(session({
 		name: "yiff",
 		secret: config.http.secret,
