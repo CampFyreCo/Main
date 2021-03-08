@@ -13,10 +13,8 @@ export default function ImageConverter(staticPath: string, cache: string) {
 		const f = path.basename(url.pathname.replace(/\/cdn/, "")).split(".");
 		const fn = f.slice(0, -1).join(".");
 		const pn = url.pathname.replace(/\/cdn/, "").split(fn)[0];
-		console.log("pn", pn);
 		const ex = f.slice(-1)[0];
 		const p = `${staticPath}${pn}${fn}`;
-		console.log("p", p);
 		if (!fs.existsSync(p)) return res.status(404).end();
 		// || because of NaN
 		const size = Number(url.searchParams.get("size")) || 512;
