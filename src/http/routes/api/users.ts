@@ -124,7 +124,7 @@ app
 				});
 			}
 
-			fs.moveSync(loc, `${config.dir.static.avatar}/${md5}.${type.ext}`);
+			if (!fs.existsSync(`${config.dir.static.avatar}/${req.data.user.id}/${md5}`)) fs.moveSync(loc, `${config.dir.static.avatar}/${req.data.user.id}/${md5}`);
 
 			d.avatar = md5;
 		}
