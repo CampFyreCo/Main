@@ -31,6 +31,7 @@ export default function ImageConverter(staticPath: string, cache: string) {
 			const nStat = fs.statSync(cpath);
 			if (rStat.mtime.getTime() === nStat.mtime.getTime()) return res.status(200).sendFile(cpath);
 		}
+
 		const type = await FileType.fromFile(p);
 		if (type === undefined) return res.status(500).end();
 		if (type.mime === "image/gif" && ex !== "gif") {

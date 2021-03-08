@@ -1,6 +1,6 @@
 import { User } from "../../../db/models";
 import RateLimitHandler from "../../../util/handlers/RatelimitHandler";
-import { EMAIL, HANDLE, MAX_AVATAR_SIZE, NAME, PASSWORD } from "../../../util/Constants/General";
+import { CONNECTIONS, EMAIL, HANDLE, MAX_AVATAR_SIZE, MAX_SAMESITE_CONNECTIONS, NAME, PASSWORD } from "../../../util/Constants/General";
 import Functions from "../../../util/Functions";
 import Mailer from "../../../util/handlers/email/Mailer";
 import config from "../../../config";
@@ -163,6 +163,60 @@ app
 				data: u.toJSON(false)
 			});
 		}
+	})
+	.put("/@me/connections", RateLimitHandler.handle("ADD_CONNECTION"), async (req, res) => {
+		if (!Functions.verifyUser(req, res, req.data.user)) return;
+		const b = req.body as AnyObject<string>;
+		if (!b.type) return res.status(400).json({
+			success: false,
+			error: Functions.formatError("USER", "MISSING_CONNECTION_TYPE")
+		});
+		if (!b.value) return res.status(400).json({
+			success: false,
+			error: Functions.formatError("USER", "MISSING_CONNECTION_VALUE")
+		});
+		if (!(CONNECTIONS as Readonly<Array<string>>).includes(b.type)) return res.status(422).json({
+			success: false,
+			error: Functions.formatError("USER", "CONNECTION_TYPE_INVALID")
+		});
+		const c = req.data.user.connections.filter(con => con.type === b.type);
+		if (c.length >= MAX_SAMESITE_CONNECTIONS) return res.status(400).json({
+			success: false,
+			error: Functions.formatError("USER", "CONNECTION_TYPE_LIMIT")
+		});
+		if (c.find(v => v.value.toLowerCase() === b.value.toLowerCase())) return res.status(409).json({
+			success: false,
+			error: Functions.formatError("USER", "CONNECTION_ALREADY_LISTED")
+		});
+		let vis: User["connections"][number]["visibility"] = "private";
+		if (b.visibility) {
+			if (["public", "friends", "private"].includes(b.visibility)) vis = b.visibility as typeof vis;
+			else return res.status(422).json({
+				success: false,
+				error: Functions.formatError("USER", "INVALID_CONNECTION_VISIBILITY", {
+					VIS: b.visibility
+				})
+			});
+		}
+
+		const con = await req.data.user.addConnection(b.type as User["connections"][number]["type"], b.value, vis);
+
+		return res.status(200).json({
+			success: false,
+			data: con
+		});
+	})
+	.delete("/@me/connections/:id", RateLimitHandler.handle("REMOVE_CONNECTION"), async (req, res) => {
+		if (!Functions.verifyUser(req, res, req.data.user)) return;
+		const r = await req.data.user.removeConnection(req.params.id);
+		if (r === false) return res.status(404).json({
+			success: false,
+			error: Functions.formatError("USER", "INVALID_CONNECTION_ID")
+		});
+		else return res.status(200).json({
+			success: true,
+			data: null
+		});
 	});
 
 export default app;

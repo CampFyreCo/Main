@@ -1,5 +1,5 @@
 import db, { mdb } from "..";
-import { BCRYPT_ROUNDS } from "../../util/Constants/General";
+import { BCRYPT_ROUNDS, CONNECTIONS } from "../../util/Constants/General";
 import Snowflake from "../../util/Snowflake";
 import Functions from "../../util/Functions";
 import { GetUserOptions } from "../../util/@types/Database";
@@ -22,7 +22,7 @@ export default class User {
 		avatar: null,
 		password: null,
 		emailVerified: false,
-		externalLinks: [],
+		connections: [],
 		authTokens: []
 	};
 
@@ -43,9 +43,17 @@ export default class User {
 	/** if the user has verified the email on their account */
 	emailVerified: boolean;
 	/** The external services this user has linked on their account */
-	externalLinks: Array<{
-		type: string;
-		url: string;
+	connections: Array<{
+		/** The id of this connection */
+		id: string;
+		/** The type of this connection */
+		type: typeof CONNECTIONS[number];
+		/** The visibility of this connection */
+		visibility: "private" | "friends" | "public";
+		/** If this connection has been verified to belong to them */
+		verified: boolean;
+		/** The value (name/handle) of this connection */
+		value: string;
 	}>;
 	authTokens: Array<{
 		ip: string;
@@ -192,12 +200,12 @@ export default class User {
 				"avatar",
 				"flags",
 				"handle",
-				"name",
-				"externalLinks"
+				"name"
 			],
 			[
 				"email",
-				"emailVerified"
+				"emailVerified",
+				"connections"
 			],
 			privateProps
 		);
@@ -234,7 +242,35 @@ export default class User {
 			)
 		).then(({ ops: [v] }) => new User(id, v));
 	}
+
+	async addConnection<T extends User["connections"][number]>(type: T["type"], value: T["value"], visibility: T["visibility"]) {
+		const id = Snowflake.generate();
+		const con = {
+			id,
+			type,
+			visibility,
+			verified: false,
+			value
+		};
+		await this.mongoEdit({
+			$push: {
+				connections: con
+			}
+		});
+
+		return con;
+	}
+
+	async removeConnection(id: string) {
+		if (!this.connections.map(c => c.id).includes(id)) return false;
+		await this.mongoEdit({
+			$pull: {
+				connections: this.connections.find(c => c.id === id)
+			}
+		});
+		return true;
+	}
 }
 
 export type PublicUser = Pick<User, "id" | "avatar" | "flags" | "handle" | "name">;
-export type PrivateUser = Pick<User, keyof PublicUser | "email" | "emailVerified">;
+export type PrivateUser = Pick<User, keyof PublicUser | "email" | "emailVerified" | "connections">;

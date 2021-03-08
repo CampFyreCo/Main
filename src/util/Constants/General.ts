@@ -1,3 +1,5 @@
+import ConnectionsHandler from "../handlers/ConnectionsHandler";
+
 export const BCRYPT_ROUNDS = 12;
 export const USER_FLAGS = {
 	STAFF: 1 << 0,
@@ -14,9 +16,6 @@ export const NAME = /^.{2,}$/i;
 export const MAX_AVATAR_SIZE = 5e+6;
 export const MIN_IMAGE_SIZE = 16;
 export const MAX_IMAGE_SIZE = 2048;
-export const EXTERNAL_LINK_TYPES = [
-
-] as const;
 export const ALLOWED_METHODS = [
 	"GET",
 	"POST",
@@ -50,3 +49,14 @@ export const Colors = {
 		return Math.floor(Math.random() * 0xFFFFFF);
 	}
 };
+export type ConnectionProperty = "noVerification" | "verificationRequired" | "noLink";
+
+export interface Connection {
+	url: string | null;
+	name: string;
+	properties: Array<ConnectionProperty>;
+	validationRegex: RegExp;
+}
+
+export const CONNECTIONS = ConnectionsHandler.VALID;
+export const MAX_SAMESITE_CONNECTIONS = 3;

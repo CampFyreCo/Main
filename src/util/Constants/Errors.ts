@@ -105,6 +105,34 @@ export const USER = {
 	NO_EMAIL: {
 		code: 41019,
 		message: "This account does not have an email associated with it."
+	},
+	MISSING_CONNECTION_TYPE: {
+		code: 41020,
+		message: "A connection type is required."
+	},
+	MISSING_CONNECTION_VALUE: {
+		code: 41021,
+		message: "A connection value is required."
+	},
+	CONNECTION_TYPE_INVALID: {
+		code: 41022,
+		message: "The connection type \"%TYPE%\" is invalid."
+	},
+	CONNECTION_TYPE_LIMIT: {
+		code: 41023,
+		message: "You have hit the limit for connections of that type."
+	},
+	CONNECTION_ALREADY_LISTED: {
+		code: 41024,
+		message: "That connection has already been added."
+	},
+	INVALID_CONNECTION_VISIBILITY: {
+		code: 41025,
+		message: "The connection visibility \"%VIS%\" is invalid."
+	},
+	INVALID_CONNECTION_ID: {
+		code: 41026,
+		message: "The connection id \"%ID%\" is not valid."
 	}
 } as const;
 
