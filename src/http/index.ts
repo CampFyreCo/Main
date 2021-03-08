@@ -33,7 +33,8 @@ app
 	.use(express.urlencoded({
 		extended: true
 	}))
-	.use("/cdn", ImageConverter(config.dir.static.base, `${config.dir.tmp}/.cache`))
+	.use("/cdn", ImageConverter(config.dir.static.cdn, `${config.dir.tmp}/.cache`))
+	.use(express.static(config.dir.static.public))
 	// eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-unsafe-member-access
 	.use(require("./routes/index").default)
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
