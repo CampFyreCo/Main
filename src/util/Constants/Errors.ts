@@ -97,12 +97,26 @@ export const USER = {
 	UNSUPPORTED_FILE_TYPE: {
 		code: 41017,
 		message: "The file type provided is not supported. Try a different type."
+	},
+	EMAIL_ALREADY_VEIRIFED: {
+		code: 41018,
+		message: "Your account email is already verified."
+	},
+	NO_EMAIL: {
+		code: 41019,
+		message: "This account does not have an email associated with it."
 	}
 };
 
-export const RATE_LIMITED = {
-	code: 429,
-	message: "You're doing that action too fast."
+export const CLIENT = {
+	RATE_LIMITED: {
+		code: 429,
+		message: "You're doing that action too fast."
+	},
+	METHOD_NOT_ALLOWED: {
+		code: 405,
+		message: "That method is not allowed."
+	}
 };
 
 export const SERVER = {

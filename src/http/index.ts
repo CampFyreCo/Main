@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/triple-slash-reference, spaced-comment */
 /// <reference path="../util/@types/Express.d.ts" />
 import config from "../config";
-import { SERVER as ServerErrors } from "../util/Constants/Errors";
+import { SERVER as ServerErrors, CLIENT as ClientErrors } from "../util/Constants/Errors";
 import ImageConverter from "../util/ImageConverter";
+import { ALLOWED_METHODS } from "../util/Constants/General";
 import express, { NextFunction } from "express";
 import morgan from "morgan";
 import session from "express-session";
@@ -33,10 +34,18 @@ app
 	.use(express.urlencoded({
 		extended: true
 	}))
+	.use(async (req, res, next) => {
+		if (!ALLOWED_METHODS.includes(req.method.toUpperCase())) return res.status(405).json({
+			success: false,
+			error: ClientErrors.METHOD_NOT_ALLOWED
+		});
+		else return next();
+	})
 	.use("/cdn", ImageConverter(config.dir.static.cdn, `${config.dir.tmp}/.cache`))
 	.use(express.static(config.dir.static.public))
 	// eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-unsafe-member-access
 	.use(require("./routes/index").default)
+	.use(async (req, res) => res.status(404).end(`The path "${req.originalUrl}" was not found on this sever.`))
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	.use(async (err: Error & AnyObject<string | number>, req: express.Request, res: express.Response, next: NextFunction) => {
 		if (err.type) {

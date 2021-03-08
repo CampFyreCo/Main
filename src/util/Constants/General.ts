@@ -17,7 +17,15 @@ export const MAX_IMAGE_SIZE = 2048;
 export const EXTERNAL_LINK_TYPES = [
 
 ] as const;
-
+export const ALLOWED_METHODS = [
+	"GET",
+	"POST",
+	"PATCH",
+	"PUT",
+	"DELETE",
+	"HEAD",
+	"OPTIONS"
+];
 export const Colors = {
 	gold: 0xFFD700,
 	orange: 0xFFA500,

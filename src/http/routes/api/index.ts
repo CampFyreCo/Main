@@ -5,6 +5,8 @@ import { Colors, EMAIL, HANDLE } from "../../../util/Constants/General";
 import WebhookHandler from "../../../util/handlers/WebhookHandler";
 import Mailer from "../../../util/handlers/email/Mailer";
 import { USER as UserErrors } from "../../../util/Constants/Errors";
+import Functions from "../../../util/Functions";
+import RateLimitHandler from "../../../util/handlers/RatelimitHandler";
 import express from "express";
 import { AnyObject } from "@uwu-codes/utils";
 
@@ -146,7 +148,7 @@ app
 			data: await u.createAuthToken(req.ip, req.headers["user-agent"])
 		});
 	})
-	.get("/confirm-email", async (req, res) => {
+	.get("/confirm-email", RateLimitHandler.handle("CONFIRM_EMAIL"), async (req, res) => {
 		const t = req.query.token?.toString();
 		if (t === undefined) return res.status(404).end("Missing confirmation token.");
 
@@ -170,6 +172,22 @@ app
 		return res.status(200).end("Your email has been confirmed. You can now close this page.");
 	})
 	.use(AuthHandler.handle())
+	.post("/confirm-email", RateLimitHandler.handle("CONFIRM_EMAIL_START"), async (req, res) => {
+		if (!Functions.verifyUser(req, res, req.data.user)) return;
+		if (req.data.user.emailVerified) return res.status(403).json({
+			success: false,
+			error: UserErrors.EMAIL_ALREADY_VEIRIFED
+		});
+
+		if (req.data.user.email === null) return res.status(403).json({
+			success: false,
+			error: UserErrors.NO_EMAIL
+		});
+
+		await Mailer.sendConfirmation(req.data.user);
+
+		return res.status(204).end();
+	})
 	// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-var-requires
 	.use("/users", require("./users").default);
 

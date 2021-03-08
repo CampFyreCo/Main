@@ -1,6 +1,6 @@
 import { Redis } from "../../db";
 import RateLimits from "../Constants/RateLimits";
-import { RATE_LIMITED } from "../Constants/Errors";
+import { CLIENT as ClientErrors } from "../Constants/Errors";
 import { Request, Response, NextFunction } from "express";
 
 export interface RateLimitInfo {
@@ -23,11 +23,11 @@ export default class RateLimitHandler {
 
 	static handle(type: RateLimitTypes) {
 		return (async (req: Request, res: Response, next: NextFunction) => {
-			const rl = await RateLimitHandler.consume(type, req.data.user!.id);
+			const rl = await RateLimitHandler.consume(type, !req.data.user ? req.sessionID : req.data.user.id);
 			res.header(RateLimitHandler.getHeaders(rl));
 			if (rl.usable === false) res.status(429).json({
 				success: false,
-				error: RATE_LIMITED
+				error: ClientErrors.RATE_LIMITED
 			});
 			else return next();
 		});
