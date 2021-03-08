@@ -1,6 +1,6 @@
 import * as fs from "fs-extra";
 import fetch from "node-fetch";
-const f = fs.readFileSync("/home/donovan/Downloads/26529308.jpg").toString("base64");
+const f = fs.readFileSync("/mnt/Extra/Backups/Downloads/26/4e1addef97c31a988ed72b6360d21179.gif").toString("base64");
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 void fetch("https://fyre.local/api/users/@me", {
 	method: "PATCH",
