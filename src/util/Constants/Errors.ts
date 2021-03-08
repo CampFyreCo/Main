@@ -19,7 +19,7 @@ export const AUTHORIZATION = {
 		code: 40004,
 		message: "Invalid user in authorization."
 	}
-};
+} as const;
 
 export const USER = {
 	UNKNOWN: {
@@ -60,7 +60,7 @@ export const USER = {
 	},
 	NOT_MODIFIED: {
 		code: 41008,
-		mesage: "No modifications were found."
+		message: "No modifications were found."
 	},
 	HANDLE_OR_EMAL_REQUIRED: {
 		code: 41009,
@@ -106,22 +106,30 @@ export const USER = {
 		code: 41019,
 		message: "This account does not have an email associated with it."
 	}
-};
+} as const;
 
 export const CLIENT = {
-	RATE_LIMITED: {
-		code: 429,
-		message: "You're doing that action too fast."
+	NOT_FOUND: {
+		code: 404,
+		message: "The path \"%PATH%\" was not found on this server."
 	},
 	METHOD_NOT_ALLOWED: {
 		code: 405,
-		message: "That method is not allowed."
+		message: "The method \"%METHOD%\" is not allowed on this server."
+	},
+	RATE_LIMITED: {
+		code: 429,
+		message: "You're doing that action too fast."
 	}
-};
+} as const;
 
 export const SERVER = {
 	UNKNOWN: {
 		code: 500,
 		message: "An unknown internal server error occured."
+	},
+	TOO_LARGE: {
+		code: 513,
+		message: "Whatever you tried to upload was too large. You sent %LENGTH% bytes. Keep it under %MAX% bytes."
 	}
-};
+} as const;

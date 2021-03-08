@@ -4,7 +4,6 @@ import { User } from "../../../db/models";
 import { Colors, EMAIL, HANDLE } from "../../../util/Constants/General";
 import WebhookHandler from "../../../util/handlers/WebhookHandler";
 import Mailer from "../../../util/handlers/email/Mailer";
-import { USER as UserErrors } from "../../../util/Constants/Errors";
 import Functions from "../../../util/Functions";
 import RateLimitHandler from "../../../util/handlers/RatelimitHandler";
 import express from "express";
@@ -35,12 +34,12 @@ app
 
 		if (b.handle && !HANDLE.test(b.handle)) return res.status(422).json({
 			success: false,
-			error: UserErrors.INVALID_HANDLE
+			error: Functions.formatError("USER", "INVALID_HANDLE")
 		});
 
 		if (b.email && !EMAIL.test(b.email)) return res.status(422).json({
 			success: false,
-			error: UserErrors.INVALID_EMAIL
+			error: Functions.formatError("USER", "INVALID_EMAIL")
 		});
 
 		let u: User | null;
@@ -55,19 +54,19 @@ app
 
 		if (u === null) return res.status(400).json({
 			success: false,
-			error: UserErrors.NO_USER_FOUND
+			error: Functions.formatError("USER", "NO_USER_FOUND")
 		});
 
 		if (u.password === null) return res.status(403).json({
 			success: false,
-			error: UserErrors.NO_PASSWORD
+			error: Functions.formatError("USER", "NO_PASSWORD")
 		});
 
 		const p = u.checkPassword(b.password);
 
 		if (!p) return res.status(400).json({
 			success: false,
-			error: UserErrors.INCORRECT_PASSWORD
+			error: Functions.formatError("USER", "INCORRECT_PASSWORD")
 		});
 
 		return res.status(200).json({
@@ -79,27 +78,27 @@ app
 		const b = req.body as AnyObject<string>;
 		if (!b.handle) return res.status(400).json({
 			success: false,
-			error: UserErrors.HANDLE_REQUIRED
+			error: Functions.formatError("USER", "HANDLE_REQUIRED")
 		});
 
 		if (!b.email) return res.status(400).json({
 			success: false,
-			error: UserErrors.EMAIL_REQUIRED
+			error: Functions.formatError("USER", "EMAIL_REQUIRED")
 		});
 
 		if (!b.password) return res.status(400).json({
 			success: false,
-			error: UserErrors.PASSWORD_REQUIRED
+			error: Functions.formatError("USER", "PASSWORD_REQUIRED")
 		});
 
 		if (!HANDLE.test(b.handle)) return res.status(422).json({
 			success: false,
-			error: UserErrors.INVALID_HANDLE
+			error: Functions.formatError("USER", "INVALID_HANDLE")
 		});
 
 		if (!EMAIL.test(b.email)) return res.status(422).json({
 			success: false,
-			error: UserErrors.INVALID_EMAIL
+			error: Functions.formatError("USER", "INVALID_EMAIL")
 		});
 
 		const h = await User.getUser({
@@ -111,11 +110,11 @@ app
 
 		if (h !== null) return res.status(409).json({
 			success: false,
-			error: UserErrors.HANDLE_IN_USE
+			error: Functions.formatError("USER", "HANDLE_IN_USE")
 		});
 		if (e !== null) return res.status(409).json({
 			success: false,
-			error: UserErrors.EMAIL_IN_USE
+			error: Functions.formatError("USER", "EMAIL_IN_USE")
 		});
 
 		const u = await User.new({
@@ -176,12 +175,12 @@ app
 		if (!Functions.verifyUser(req, res, req.data.user)) return;
 		if (req.data.user.emailVerified) return res.status(403).json({
 			success: false,
-			error: UserErrors.EMAIL_ALREADY_VEIRIFED
+			error: Functions.formatError("USER", "EMAIL_ALREADY_VEIRIFED")
 		});
 
 		if (req.data.user.email === null) return res.status(403).json({
 			success: false,
-			error: UserErrors.NO_EMAIL
+			error: Functions.formatError("USER", "NO_EMAIL")
 		});
 
 		await Mailer.sendConfirmation(req.data.user);

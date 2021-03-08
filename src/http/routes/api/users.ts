@@ -1,5 +1,4 @@
 import { User } from "../../../db/models";
-import { USER as UserErrors } from "../../../util/Constants/Errors";
 import RateLimitHandler from "../../../util/handlers/RatelimitHandler";
 import { EMAIL, HANDLE, MAX_AVATAR_SIZE, NAME, PASSWORD } from "../../../util/Constants/General";
 import Functions from "../../../util/Functions";
@@ -29,23 +28,23 @@ app
 		const d: Partial<{ handle: string; name: string; email: string; avatar: string; }> = {};
 		if (!b.password) return res.status(400).json({
 			success: false,
-			error: UserErrors.PASSWORD_REQUIRED
+			error: Functions.formatError("USER", "PASSWORD_REQUIRED")
 		});
 
 		if (!req.data.user.checkPassword(b.password)) return res.status(401).json({
 			success: false,
-			error: UserErrors.INCORRECT_PASSWORD
+			error: Functions.formatError("USER", "INCORRECT_PASSWORD")
 		});
 
 		if (b.handle) {
 			if (!HANDLE.test(b.handle.toString())) return res.status(422).json({
 				success: false,
-				error: UserErrors.INVALID_HANDLE
+				error: Functions.formatError("USER", "INVALID_HANDLE")
 			});
 			const h = await User.getUser({ handle: b.handle.toLowerCase() });
 			if (h !== null) return res.status(409).json({
 				success: false,
-				error: UserErrors.HANDLE_IN_USE
+				error: Functions.formatError("USER", "HANDLE_IN_USE")
 			});
 
 			d.handle = b.handle.toLowerCase();
@@ -54,7 +53,7 @@ app
 		if (b.name) {
 			if (!NAME.test(b.name.toString())) return res.status(422).json({
 				success: false,
-				error: UserErrors.INVALID_NAME
+				error: Functions.formatError("USER", "INVALID_NAME")
 			});
 
 			d.name = b.name;
@@ -63,14 +62,14 @@ app
 		if (b.email) {
 			if (!EMAIL.test(b.email.toString())) return res.status(422).json({
 				success: false,
-				error: UserErrors.INVALID_EMAIL
+				error: Functions.formatError("USER", "INVALID_EMAIL")
 			});
 			// the start of emails is technically case sensitive, so we have to do it with regex
 			// https://stackoverflow.com/q/9807909/#comment40364273_9808332
 			const e = await User.getUser({ email: new RegExp(`^${b.email}$`.toLowerCase(), "i") });
 			if (e !== null) return res.status(409).json({
 				success: false,
-				error: UserErrors.EMAIL_IN_USE
+				error: Functions.formatError("USER", "EMAIL_IN_USE")
 			});
 
 			d.email = b.email.toLowerCase();
@@ -80,7 +79,7 @@ app
 		if (b.newPassword) {
 			if (!PASSWORD.test(b.newPassword)) return res.status(422).json({
 				success: false,
-				error: UserErrors.INVALID_PASSWORD
+				error: Functions.formatError("USER", "INVALID_PASSWORD")
 			});
 			await req.data.user.setPassword(b.newPassword);
 			passwordChange = true;
@@ -91,7 +90,7 @@ app
 
 			if (b64.length > MAX_AVATAR_SIZE) return res.status(413).json({
 				success: false,
-				data: UserErrors.AVATAR_TOO_LARGE
+				data: Functions.formatError("USER", "AVATAR_TOO_LARGE")
 			});
 
 			const r = crypto.randomBytes(32).toString("hex");
@@ -103,7 +102,7 @@ app
 				if (fs.existsSync(loc)) fs.unlinkSync(loc);
 				return res.status(422).json({
 					success: false,
-					data: UserErrors.INVALID_AVATAR
+					data: Functions.formatError("USER", "INVALID_AVATAR")
 				});
 			}
 			const md5 = Functions.md5File(loc);
@@ -112,7 +111,7 @@ app
 				fs.unlinkSync(loc);
 				return res.status(422).json({
 					success: false,
-					data: UserErrors.UNKNOWN_FILE_TYPE
+					data: Functions.formatError("USER", "UNKNOWN_FILE_TYPE")
 				});
 			}
 
@@ -120,7 +119,7 @@ app
 				fs.unlinkSync(loc);
 				return res.status(422).json({
 					success: false,
-					data: UserErrors.UNSUPPORTED_FILE_TYPE
+					data: Functions.formatError("USER", "UNSUPPORTED_FILE_TYPE")
 				});
 			}
 
@@ -138,7 +137,7 @@ app
 
 		if (JSON.stringify(d) === "{}" && passwordChange === false) return res.status(400).json({
 			success: false,
-			error: UserErrors.NOT_MODIFIED
+			error: Functions.formatError("USER", "NOT_MODIFIED")
 		});
 
 		await req.data.user.edit(d);
@@ -156,7 +155,7 @@ app
 		if (u === null) {
 			return res.status(404).json({
 				success: false,
-				error: UserErrors.UNKNOWN
+				error: Functions.formatError("USER", "UNKNOWN")
 			});
 		} else {
 			return res.status(200).json({

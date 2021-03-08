@@ -1,16 +1,14 @@
 // / <reference path="./@types/Express.d.ts" />
 import { USER_FLAGS } from "./Constants/General";
-import { SERVER as ServerErrors } from "./Constants/Errors";
+import * as Errors from "./Constants/Errors";
 import { User } from "../db/models";
 import * as fs from "fs-extra";
 import { Request, Response } from "express";
 import crypto from "crypto";
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type JSONReturn<K extends any, N extends Array<keyof K>, O extends Array<keyof K>, T extends boolean = false> = {
 	[F in (T extends false ? N[number] : (N[number] | O[number]))]: K[F];
 };
-
 export default class Functions {
 	// eslint-disable-next-line @typescript-eslint/no-empty-function
 	private constructor() { }
@@ -164,13 +162,23 @@ export default class Functions {
 	// I hate it but it works
 	static verifyUser<T extends Request>(req: T, res: Response, obj: T["data"]["user"]): obj is User {
 		// doing constructor.name because of circular dependencies with User
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 		if (!!obj && obj.constructor.name === "User") return true;
 		else {
 			res.status(500).json({
 				success: false,
-				error: ServerErrors.UNKNOWN
+				error: this.formatError("SERVER", "UNKNOWN")
 			});
 			return false;
 		}
+	}
+
+	static formatError<K extends keyof typeof Errors = keyof typeof Errors, T extends keyof (typeof Errors[K]) = keyof (typeof Errors[K])>(category: K, type: T, format: Record<string, Uppercase<string>> = {}): typeof Errors[K][T] {
+		/* eslint-disable */
+		const e = (Errors[category] as any)[type] as typeof Errors[K][T];
+		// @ts-ignore
+		Object.keys(format).map(v => e.message = e.message.replace(new RegExp(`%${v.toUpperCase()}%`, "g"), format[v]));
+		return e!;
+		/* eslint-enable */
 	}
 }

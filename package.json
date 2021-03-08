@@ -33,9 +33,9 @@
     "@types/identicon.js": "^2.3.0",
     "@types/imagemagick": "^0.0.30",
     "@types/ioredis": "^4.22.0",
-    "@types/mongodb": "^3.6.8",
+    "@types/mongodb": "^3.6.9",
     "@types/morgan": "^1.9.2",
-    "@types/node": "^14.14.31",
+    "@types/node": "^14.14.32",
     "@types/node-fetch": "^2.5.8",
     "@types/nodemailer": "^6.4.0",
     "@types/on-finished": "^2.3.1",
@@ -46,7 +46,7 @@
     "leeks.js": "^0.1.1"
   },
   "dependencies": {
-    "@uwu-codes/utils": "^1.0.15",
+    "@uwu-codes/utils": "^1.0.17",
     "bcrypt": "^5.0.1",
     "deasync": "^0.1.21",
     "eris": "^0.14.0",

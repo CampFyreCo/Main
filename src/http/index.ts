@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/triple-slash-reference, spaced-comment */
 /// <reference path="../util/@types/Express.d.ts" />
 import config from "../config";
-import { SERVER as ServerErrors, CLIENT as ClientErrors } from "../util/Constants/Errors";
 import ImageConverter from "../util/ImageConverter";
 import { ALLOWED_METHODS } from "../util/Constants/General";
+import Functions from "../util/Functions";
 import express, { NextFunction } from "express";
 import morgan from "morgan";
 import session from "express-session";
@@ -37,7 +37,9 @@ app
 	.use(async (req, res, next) => {
 		if (!ALLOWED_METHODS.includes(req.method.toUpperCase())) return res.status(405).json({
 			success: false,
-			error: ClientErrors.METHOD_NOT_ALLOWED
+			error: Functions.formatError("CLIENT", "METHOD_NOT_ALLOWED", {
+				METHOD: req.method.toUpperCase()
+			})
 		});
 		else return next();
 	})
@@ -45,25 +47,27 @@ app
 	.use(express.static(config.dir.static.public))
 	// eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-unsafe-member-access
 	.use(require("./routes/index").default)
-	.use(async (req, res) => res.status(404).end(`The path "${req.originalUrl}" was not found on this sever.`))
+	.use(async (req, res) => req.originalUrl.toLowerCase().startsWith("/api") ? res.status(404).json({ success: false, error: Functions.formatError("CLIENT", "NOT_FOUND", { PATH: req.originalUrl.split("?")[0] }) }) : res.status(404).render("errors/404", { path: req.originalUrl }))
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	.use(async (err: Error & AnyObject<string | number>, req: express.Request, res: express.Response, next: NextFunction) => {
+		const api = req.originalUrl.toLowerCase().startsWith("/api");
 		if (err.type) {
 			switch (err.type) {
 				case "entity.too.large": return res.status(413).json({
 					success: false,
-					error: {
-						code: 413,
-						message: `Whatever you tried to upload was too large. You sent ${err.length.toLocaleString()} bytes. Keep it under ${err.limit.toLocaleString()} bytes.`
-					}
+					error: Functions.formatError("SERVER", "TOO_LARGE", {
+						LENGTH: err.length.toLocaleString(),
+						MAX: err.limit.toLocaleString()
+					})
 				});
 			}
 		}
 		console.log(err);
-		return res.status(500).json({
+		if (api) return res.status(500).json({
 			success: false,
-			error: ServerErrors.UNKNOWN
+			error: Functions.formatError("SERVER", "UNKNOWN")
 		});
+		else return res.status(500).render("errors/500");
 	});
 
 (config.http.secure ? https : http)
