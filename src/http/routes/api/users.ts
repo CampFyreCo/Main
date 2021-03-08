@@ -1,11 +1,16 @@
 import { User } from "../../../db/models";
 import { USER as UserErrors } from "../../../util/Constants/Errors";
 import RateLimitHandler from "../../../util/handlers/RatelimitHandler";
-import { EMAIL, HANDLE, NAME, PASSWORD } from "../../../util/Constants/General";
+import { EMAIL, HANDLE, MAX_AVATAR_SIZE, NAME, PASSWORD } from "../../../util/Constants/General";
 import Functions from "../../../util/Functions";
 import Mailer from "../../../util/handlers/email/Mailer";
+import config from "../../../config";
+import Logger from "../../../util/Logger";
 import express from "express";
 import { AnyObject } from "@uwu-codes/utils";
+import * as fs from "fs-extra";
+import FileType from "file-type";
+import crypto from "crypto";
 
 const app = express.Router();
 
@@ -21,7 +26,7 @@ app
 	.patch("/@me", RateLimitHandler.handle("EDIT_SELF_USER"), async (req, res) => {
 		if (!Functions.verifyUser(req, res, req.data.user)) return;
 		const b = req.body as AnyObject<string>;
-		const d: Partial<{ handle: string; name: string; email: string; }> = {};
+		const d: Partial<{ handle: string; name: string; email: string; avatar: string; }> = {};
 		if (!b.password) return res.status(400).json({
 			success: false,
 			error: UserErrors.PASSWORD_REQUIRED
@@ -79,6 +84,49 @@ app
 			});
 			await req.data.user.setPassword(b.newPassword);
 			passwordChange = true;
+		}
+
+		if (b.avatar) {
+			const b64 = b.avatar.split("base64;").slice(-1)[0];
+
+			if (b64.length > MAX_AVATAR_SIZE) return res.status(413).json({
+				success: false,
+				data: UserErrors.AVATAR_TOO_LARGE
+			});
+
+			const r = crypto.randomBytes(32).toString("hex");
+			const loc = `${config.dir.tmp}/${r}`;
+			try {
+				fs.writeFileSync(loc, b64, { encoding: "base64" });
+			} catch (e) {
+				Logger.error("PatchUser -> Avatar", e);
+				if (fs.existsSync(loc)) fs.unlinkSync(loc);
+				return res.status(422).json({
+					success: false,
+					data: UserErrors.INVALID_AVATAR
+				});
+			}
+			const md5 = Functions.md5File(loc);
+			const type = await FileType.fromFile(loc);
+			if (type === undefined) {
+				fs.unlinkSync(loc);
+				return res.status(422).json({
+					success: false,
+					data: UserErrors.UNKNOWN_FILE_TYPE
+				});
+			}
+
+			if (!Object.keys(config.mimes).includes(type.mime)) {
+				fs.unlinkSync(loc);
+				return res.status(422).json({
+					success: false,
+					data: UserErrors.UNSUPPORTED_FILE_TYPE
+				});
+			}
+
+			fs.moveSync(loc, `${config.dir.static.avatar}/${md5}.${type.ext}`);
+
+			d.avatar = md5;
 		}
 
 		for (const j in d) {

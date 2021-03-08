@@ -11,7 +11,8 @@
     "check-circular": "dpdm --tree=false --circular=true --warning=false -T .",
     "script:setup-db": "ts-node scripts/setup-db.ts",
     "script:gen-auth-token": "ts-node scripts/gen-auth-token.ts",
-    "script:test-rate-limits": "ts-node scripts/test-rate-limits.ts"
+    "script:test-rate-limits": "ts-node scripts/test-rate-limits.ts",
+    "script:test-avatars": "ts-node scripts/test-avatars.ts"
   },
   "repository": {
     "type": "git",
@@ -34,6 +35,7 @@
     "@types/mongodb": "^3.6.8",
     "@types/morgan": "^1.9.2",
     "@types/node": "^14.14.31",
+    "@types/node-fetch": "^2.5.8",
     "@types/nodemailer": "^6.4.0",
     "@types/on-finished": "^2.3.1",
     "@types/ua-parser-js": "^0.7.35",
@@ -49,11 +51,13 @@
     "eris": "^0.14.0",
     "express": "^4.17.1",
     "express-session": "^1.17.1",
+    "file-type": "^16.3.0",
     "fs-extra": "^9.1.0",
     "identicon.js": "^2.3.3",
     "ioredis": "^4.23.0",
     "mongodb": "^3.6.4",
     "morgan": "^1.10.0",
+    "node-fetch": "^2.6.1",
     "nodemailer": "^6.5.0",
     "on-finished": "^2.3.0",
     "pug": "^3.0.2",

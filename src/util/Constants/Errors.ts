@@ -81,6 +81,22 @@ export const USER = {
 	EMAIL_REQUIRED: {
 		code: 41013,
 		message: "An email is required."
+	},
+	INVALID_AVATAR: {
+		code: 41014,
+		message: "Invalid avatar provided. Make sure it's a base64 encoded image."
+	},
+	AVATAR_TOO_LARGE: {
+		code: 41015,
+		message: "The avatar you sent was too large."
+	},
+	UNKNOWN_FILE_TYPE: {
+		code: 41016,
+		message: "We were unable to find the type of that file. Try a different file."
+	},
+	UNSUPPORTED_FILE_TYPE: {
+		code: 41017,
+		message: "The file type provided is not supported. Try a different type."
 	}
 };
 
