@@ -20,7 +20,7 @@ app
 
 		return next();
 	})
-	.post("/login", async (req, res) => {
+	.post("/login", RateLimitHandler.handle("USER_LOGIN"),async (req, res) => {
 		const b = req.body as AnyObject<string>;
 		if (!b.email && !b.handle) return res.status(400).json({
 			success: false,
@@ -69,12 +69,66 @@ app
 			error: Functions.formatError("USER", "INCORRECT_PASSWORD")
 		});
 
+		if (u.mfaEnabled && u.mfaVerified) return res.status(200).json({
+			success: true,
+			data: {
+				token: await u.createMFALoginToken(req.ip),
+				mfa: true
+			}
+		});
+		else return res.status(200).json({
+			success: true,
+			data: {
+				token: await u.createAuthToken(req.ip, req.headers["user-agent"]),
+				mfa: false
+			}
+		});
+	})
+	.post("/login/mfa", RateLimitHandler.handle("USER_LOGIN_MFA"), async (req, res) => {
+		const b = req.body as AnyObject<string>;
+		if (!b.token) return res.status(400).json({
+			success: false,
+			error: Functions.formatError("AUTHORIZATION", "LOGIN_TOKEN_REQUIRED")
+		});
+
+		if (!b.code) return res.status(400).json({
+			success: false,
+			error: Functions.formatError("AUTHORIZATION", "MFA_CODE_REQUIRED")
+		});
+
+		const c = await User.useMFALoginToken(req.ip, b.token);
+
+		if (c === null) return res.status(404).json({
+			success: false,
+			error: Functions.formatError("AUTHORIZATION", "LOGIN_TOKEN_INVALID")
+		});
+
+		// this shouldn't happen, but it has a small possibility of happening
+		const u = await User.getUser({ id: c });
+		if (u === null) return res.status(500).json({
+			success: false,
+			error: Functions.formatError("INTERNAL", "UNKNOWN")
+		});
+
+		const mfaCheck = await u.verifyMFA(b.code);
+
+		// send back a new token if mfa is incorrect, so they don't need to login again,
+		// since we already know they have the correct details
+		if (!mfaCheck) return res.status(401).json({
+			success: false,
+			error: Functions.formatError("AUTHORIZATION", "MFA_CODE_INCORRECT"),
+			data: {
+				token: await u.createMFALoginToken(req.ip),
+				mfa: true
+			}
+		});
+
 		return res.status(200).json({
 			success: true,
 			data: await u.createAuthToken(req.ip, req.headers["user-agent"])
 		});
 	})
-	.post("/register", async (req, res) => {
+	.post("/register", RateLimitHandler.handle("USER_REGISTER"), async (req, res) => {
 		const b = req.body as AnyObject<string>;
 		if (!b.handle) return res.status(400).json({
 			success: false,

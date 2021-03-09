@@ -1,8 +1,43 @@
 import { mdb } from "../src/db";
-import { User } from "../src/db/models";
+import { Server, User } from "../src/db/models";
 import { USER_FLAGS } from "../src/util/Constants/General";
 
 const drop = true;
+
+async function setupServers() {
+	const col = mdb.collection("servers");
+	if (!drop) await col.dropIndexes().then(() => console.log(`Dropped all of the indexes on \`${mdb.databaseName}\`.\`servers\`.`));
+	await col.createIndexes([
+		{
+			name: "id",
+			key: {
+				id: 1
+			},
+			unique: true
+		},
+		{
+			name: "name",
+			key: {
+				name: 1
+			},
+			unique: false
+		},
+		{
+			name: "owner",
+			key: {
+				owner: 1
+			},
+			unique: false
+		},
+		{
+			name: "vanityURL",
+			key: {
+				vanityURL: 1
+			},
+			unique: false
+		}
+	]);
+}
 
 async function setupUsers() {
 	const col = mdb.collection("users");
@@ -65,18 +100,40 @@ process.nextTick(async () => {
 	}
 
 
+	await setupServers().then(() => console.log(`\`${mdb.databaseName}\`.\`servers\` setup successfully.`));
 	await setupUsers().then(() => console.log(`\`${mdb.databaseName}\`.\`users\` setup successfully.`));
 
-	await User.new({
-		flags: USER_FLAGS.STAFF + USER_FLAGS.ADMIN,
+	const user = await User.new({
+		flags: USER_FLAGS.STAFF + USER_FLAGS.VERIFIED + USER_FLAGS.SYSTEM,
 		handle: "admin",
 		name: "Administrator",
 		email: "hewwo@yiff.rocks",
 		emailVerified: true
-	}).then(async (u) => {
+	}, "1").then(async (u) => {
 		await u.setPassword("P@ssw0rd");
 		console.log(`Added admin user (id: ${u.id})`);
+		return u;
 	});
+
+	const token = await user.createAuthToken("0.0.0.0", undefined);
+
+	console.log("Admin Auth Token:", token);
+
+	const srv = await Server.new({
+		name: "Test Server",
+		owner: user.id,
+		vanityURL: "test",
+		features: [
+			"OFFICIAL",
+			"VERIFIED",
+			"VANITY_URL"
+		]
+	}, "2").then(async (s) => {
+		console.log(`Added test server (id: ${s.id})`);
+		return s;
+	});
+
+	await srv.addMember(user).then(() => console.log(`Added the user @${user.handle} (id: ${user.id}) to ${srv.name} (id: ${srv.id})`));
 
 	process.exit(0);
 });

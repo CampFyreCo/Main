@@ -5,10 +5,12 @@ import { RateLimiterRedis, RateLimiterRes } from "rate-limiter-flexible";
 import { RequestHandler } from "express";
 
 export default class RateLimitHandler {
-	static HANDLERS = new Map<RateLimitTypes, RequestHandler>();
-	static LIST = new Map<RateLimitTypes, RateLimiterRedis>();
+	static INITIALIZED = false;
+	private static HANDLERS = new Map<RateLimitTypes, RequestHandler>();
+	private static LIST = new Map<RateLimitTypes, RateLimiterRedis>();
 
 	static init() {
+		this.INITIALIZED = true;
 		Object.keys(RateLimits).map((k) => {
 			const name = k as RateLimitTypes;
 			const [points, duration] = RateLimits[name];

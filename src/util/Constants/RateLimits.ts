@@ -11,4 +11,15 @@ export default class RateLimits {
 	static REMOVE_CONNECTION = [5, 60] as RateLimit;
 	static GET_SERVER = [5, 30] as RateLimit;
 	static EDIT_SERVER = [5, 30] as RateLimit;
+	static DELETE_SERVER = [2, 60] as RateLimit;
+	static USER_LOGIN = [3, 30] as RateLimit;
+	static USER_LOGIN_MFA = [3, 30] as RateLimit;
+	static USER_REGISTER = [2, 30] as RateLimit;
+	static GET_SELF_SERVERS = [2, 15] as RateLimit;
+	static LEAVE_SERVER = [5, 30] as RateLimit;
+	static ENABLE_MFA = [3, 120] as RateLimit;
+	static DISABLE_MFA = [3, 120] as RateLimit;
+	static VERIFY_MFA = [3, 120] as RateLimit;
+	static GET_BACKUP_CODES = [2, 120] as RateLimit;
+	static RESET_BACKUP_CODES = [2, 120] as RateLimit;
 }

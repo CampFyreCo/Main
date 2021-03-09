@@ -55,7 +55,7 @@ app
 			switch (err.type) {
 				case "entity.too.large": return res.status(413).json({
 					success: false,
-					error: Functions.formatError("SERVER", "TOO_LARGE", {
+					error: Functions.formatError("INTERNAL", "TOO_LARGE", {
 						LENGTH: err.length.toLocaleString(),
 						MAX: err.limit.toLocaleString()
 					})
@@ -65,7 +65,7 @@ app
 		console.log(err);
 		if (api) return res.status(500).json({
 			success: false,
-			error: Functions.formatError("SERVER", "UNKNOWN")
+			error: Functions.formatError("INTERNAL", "UNKNOWN")
 		});
 		else return res.status(500).render("errors/500");
 	});

@@ -1,9 +1,11 @@
 import ConnectionsHandler from "../handlers/ConnectionsHandler";
+import { Encoding } from "speakeasy";
 
 export const BCRYPT_ROUNDS = 12;
 export const USER_FLAGS = {
 	STAFF: 1 << 0,
-	ADMIN: 1 << 1
+	VERIFIED: 1 << 1,
+	SYSTEM: 1 << 2
 } as const;
 // I wanted to do flags, but that runs out after ~30, which we could easily get to eventually,
 // so we're being prepared for the future
@@ -66,6 +68,21 @@ export interface Connection {
 	validationRegex: RegExp;
 }
 
+/* start user connections*/
 export const CONNECTIONS = ConnectionsHandler.VALID;
 export const MAX_SAMESITE_CONNECTIONS = 3;
 export const MAX_CONNECTIONS = 15;
+
+/* other */
+export const APP_NAME = "Camp Fyre";
+
+/* 2fa */
+export const MFA_NAME = APP_NAME;
+export const MFA_ISSUER = APP_NAME;
+export const MFA_LENGTH = 16;
+export const MFA_ENCODING = "base32" as Encoding;
+export const MFA_STEP = 30;
+export const MFA_WINDOW = 2;
+export const MFA_LOGIN_TOKEN_EXPIRY = 60;
+export const MFA_BACKUP_REGEX = /^[\da-f]{6}-[\da-f]{6}-[\da-f]{6}$/i;
+export const MFA_BACKUP_COUNT = 5;

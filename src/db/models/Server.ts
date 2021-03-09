@@ -2,7 +2,7 @@ import User from "./User";
 import db, { mdb } from "..";
 import Snowflake from "../../util/Snowflake";
 import Functions from "../../util/Functions";
-import { GetServerOptions } from "../../util/@types/Database";
+import { CreateServerOptions, GetServerOptions } from "../../util/@types/Database";
 import config from "../../config";
 import { SERVER_FEATURES } from "../../util/Constants/General";
 import { FilterQuery, FindOneAndUpdateOption, UpdateQuery } from "mongodb";
@@ -126,8 +126,11 @@ export default class Server {
 	static async getServer(data: string | FilterQuery<GetServerOptions>) {
 		return db.collection("servers").findOne(typeof data === "string" ? { id: data } : (data as AnyObject)).then((d) => d ? new Server(d.id, d) : null);
 	}
-	static async new(data: Omit<Nullable<DeepPartial<ServerProperties>>, "id">) {
-		const id = Snowflake.generate();
+
+	static async new(data: CreateServerOptions, idOverride?: string) {
+		// id override should NOT be used in production
+		if (config.dev === false && idOverride) throw new TypeError("id override used in production.");
+		const id = idOverride ?? Snowflake.generate();
 
 		return db.collection("servers").insertOne(
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any

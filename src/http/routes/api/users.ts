@@ -222,7 +222,7 @@ app
 			data: null
 		});
 	})
-	.get("/@me/servers", async (req, res) => {
+	.get("/@me/servers", RateLimitHandler.handle("GET_SELF_SERVERS"), async (req, res) => {
 		if (!Functions.verifyUser(req, res, req.data.user)) return;
 		const data = await Promise.all(req.data.user.servers.map(Server.getServer.bind(Server)));
 		res.status(200).json({
@@ -230,26 +230,156 @@ app
 			data
 		});
 	})
-	.delete("/@me/servers/:id", async (req, res) => {
+	.delete("/@me/servers/:id", RateLimitHandler.handle("LEAVE_SERVER"), async (req, res) => {
+		if (!Functions.verifyUser(req, res, req.data.user)) return;
 		const srv = await Server.getServer(req.params.id);
 		if (srv === null) return res.status(404).json({
 			success: false,
-			data: Functions.formatError("USER", "INVALID_SERVER")
+			data: Functions.formatError("SERVER", "UNKNOWN")
 		});
-		if (!Functions.verifyUser(req, res, req.data.user)) return;
-		if (req.data.user.inServer(req.params.id)) return res.status(404).json({
+		if (!req.data.user.inServer(req.params.id)) return res.status(404).json({
 			success: false,
-			data: Functions.formatError("USER", "NOT_IN_SERVER")
+			data: Functions.formatError("USER", "NO_ACCESS_SERVER")
 		});
 
 		if (srv.owner === req.data.user.id) return res.status(403).json({
 			success: false,
-			data: Functions.formatError("USER", "SERVER_OWNER")
+			data: Functions.formatError("SERVER", "OWNER")
 		});
 
 		await srv.removeMember(req.data.user.id, "leave");
 
 		return res.status(204).end();
+	})
+	.post("/@me/mfa", RateLimitHandler.handle("ENABLE_MFA"), async (req, res) => {
+		if (!Functions.verifyUser(req, res, req.data.user)) return;
+		const b = req.body as AnyObject<string>;
+
+		if (!b.password) return res.status(400).json({
+			success: false,
+			data: Functions.formatError("USER", "PASSWORD_REQUIRED")
+		});
+
+		if (!req.data.user.checkPassword(b.password)) return res.status(401).json({
+			success: false,
+			data: Functions.formatError("USER", "INCORRECT_PASSWORD")
+		});
+
+		const mfa = await req.data.user.enableMFA();
+		if (mfa === null) return res.status(400).json({
+			success: false,
+			data: Functions.formatError("USER", "MFA_ALREADY_ENABLED")
+		});
+
+		return res.status(200).json({
+			success: true,
+			data: mfa
+		});
+	})
+	.delete("/@me/mfa", RateLimitHandler.handle("DISABLE_MFA"), async (req, res) => {
+		if (!Functions.verifyUser(req, res, req.data.user)) return;
+		const b = req.body as AnyObject<string>;
+
+		if (!b.password) return res.status(400).json({
+			success: false,
+			data: Functions.formatError("USER", "PASSWORD_REQUIRED")
+		});
+
+		if (!req.data.user.checkPassword(b.password)) return res.status(401).json({
+			success: false,
+			data: Functions.formatError("USER", "INCORRECT_PASSWORD")
+		});
+
+		if (req.data.user.mfaEnabled === false) return res.status(400).json({
+			success: false,
+			data: Functions.formatError("USER", "MFA_NOT_ENABLED")
+		});
+
+		// since they could have lost it, we allow them to disable it with a code if it hasn't been verified
+		if (req.data.user.mfaVerified) {
+			if (!b.code) return res.status(400).json({
+				success: false,
+				data: Functions.formatError("AUTHORIZATION", "MFA_CODE_REQUIRED")
+			});
+
+			const m = await req.data.user.verifyMFA(b.code);
+			if (m === false) return res.status(401).json({
+				success: false,
+				data: Functions.formatError("AUTHORIZATION", "MFA_CODE_INCORRECT")
+			});
+		}
+
+		await req.data.user.edit({
+			mfaEnabled: false,
+			mfaVerified: false,
+			mfaSecret: null,
+			mfaBackupCodes: []
+		});
+
+		return res.status(204).end();
+	})
+	.put("/@me/mfa/verify", RateLimitHandler.handle("VERIFY_MFA"), async (req, res) => {
+		if (!Functions.verifyUser(req, res, req.data.user)) return;
+		const b = req.body as AnyObject<string>;
+		if (!b.code) return res.status(400).json({
+			success: false,
+			data: Functions.formatError("AUTHORIZATION", "MFA_CODE_REQUIRED")
+		});
+
+		const v = await req.data.user.verifyMFA(b.code);
+		if (!v) return res.status(404).json({
+			success: false,
+			data: Functions.formatError("AUTHORIZATION", "MFA_CODE_INCORRECT")
+		});
+		else return res.status(204).end();
+	})
+	.get("/@me/mfa/backup-codes", RateLimitHandler.handle("GET_BACKUP_CODES"), async (req, res) => {
+		if (!Functions.verifyUser(req, res, req.data.user)) return;
+		const b = req.body as AnyObject<string>;
+
+		if (req.data.user.mfaEnabled === false) return res.status(400).json({
+			success: false,
+			data: Functions.formatError("USER", "MFA_NOT_ENABLED")
+		});
+
+		if (!b.password) return res.status(400).json({
+			success: false,
+			data: Functions.formatError("USER", "PASSWORD_REQUIRED")
+		});
+
+		if (!req.data.user.checkPassword(b.password)) return res.status(401).json({
+			success: false,
+			data: Functions.formatError("USER", "INCORRECT_PASSWORD")
+		});
+
+		return res.status(200).json({
+			success: true,
+			data: req.data.user.mfaBackupCodes
+		});
+	})
+	.post("/@me/mfa/backup-codes/reset", RateLimitHandler.handle("RESET_BACKUP_CODES"), async (req, res) => {
+		if (!Functions.verifyUser(req, res, req.data.user)) return;
+		const b = req.body as AnyObject<string>;
+
+		if (req.data.user.mfaEnabled === false) return res.status(400).json({
+			success: false,
+			data: Functions.formatError("USER", "MFA_NOT_ENABLED")
+		});
+
+		if (!b.password) return res.status(400).json({
+			success: false,
+			data: Functions.formatError("USER", "PASSWORD_REQUIRED")
+		});
+
+		if (!req.data.user.checkPassword(b.password)) return res.status(401).json({
+			success: false,
+			data: Functions.formatError("USER", "INCORRECT_PASSWORD")
+		});
+
+		return res.status(200).json({
+			success: true,
+			data: await req.data.user.resetBackupCodes()
+		});
 	});
 
 export default app;

@@ -161,21 +161,11 @@ export default class AuthHandler {
 				}
 
 				case "staff": {
-					if (f.STAFF || f.ADMIN) continue;
+					if (f.STAFF) continue;
 					else {
 						return res.status(403).json({
 							success: false,
 							error: "You must be a staff member to use this."
-						});
-					}
-				}
-
-				case "admin": {
-					if (f.ADMIN) continue;
-					else {
-						return res.status(403).json({
-							success: false,
-							error: "You must be an admin to use this."
 						});
 					}
 				}

@@ -18,6 +18,22 @@ export const AUTHORIZATION = {
 	INVALID_USER: {
 		code: 40004,
 		message: "Invalid user in authorization."
+	},
+	LOGIN_TOKEN_REQUIRED: {
+		code: 40005,
+		message: "A login token is required to use this."
+	},
+	MFA_CODE_REQUIRED: {
+		code: 40006,
+		message: "A mfa code is required."
+	},
+	LOGIN_TOKEN_INVALID: {
+		code: 40007,
+		message: "The provided login token is invalid."
+	},
+	MFA_CODE_INCORRECT: {
+		code: 40008,
+		message: "The provided mfa code is incorrect."
 	}
 } as const;
 
@@ -138,19 +154,30 @@ export const USER = {
 		code: 41027,
 		message: "The connection id \"%ID%\" is not valid."
 	},
-	INVALID_SERVER: {
+	NO_ACCESS_SERVER: {
 		code: 41028,
-		message: "That is not a valid server."
+		message: "You do not have access to that server."
 	},
-	NOT_IN_SERVER: {
+	MFA_ALREADY_ENABLED: {
 		code: 41029,
-		message: "You are not in that server."
+		message: "Multi-Factor Authentication is already enabled on your account."
 	},
-	SERVER_OWNER: {
+	MFA_NOT_ENABLED: {
 		code: 41030,
-		message: "You cannot leave a server you own."
+		message: "Multi-Factor Authentication is not enabled for your account."
 	}
 } as const;
+
+export const SERVER = {
+	UNKNOWN: {
+		code: 42000,
+		message: "Unknown server."
+	},
+	OWNER: {
+		code: 41001,
+		message: "You cannot leave a server you own."
+	}
+};
 
 export const CLIENT = {
 	NOT_FOUND: {
@@ -167,7 +194,8 @@ export const CLIENT = {
 	}
 } as const;
 
-export const SERVER = {
+// can't be server due to actual servers taking that
+export const INTERNAL = {
 	UNKNOWN: {
 		code: 500,
 		message: "An unknown internal server error occured."

@@ -1,8 +1,8 @@
-import db, { mdb } from "..";
-import { BCRYPT_ROUNDS, CONNECTIONS } from "../../util/Constants/General";
+import db, { mdb, Redis } from "..";
+import { BCRYPT_ROUNDS, CONNECTIONS, MFA_BACKUP_COUNT, MFA_BACKUP_REGEX, MFA_LOGIN_TOKEN_EXPIRY, MFA_STEP, MFA_WINDOW } from "../../util/Constants/General";
 import Snowflake from "../../util/Snowflake";
 import Functions from "../../util/Functions";
-import { GetUserOptions } from "../../util/@types/Database";
+import { CreateUserOptions, GetUserOptions } from "../../util/@types/Database";
 import config from "../../config";
 import UserAgent, { IBrowser } from "ua-parser-js";
 import bcrypt from "bcrypt";
@@ -25,7 +25,11 @@ export default class User {
 		emailVerified: false,
 		connections: [],
 		authTokens: [],
-		servers: []
+		servers: [],
+		mfaEnabled: false,
+		mfaVerified: false,
+		mfaSecret: null,
+		mfaBackupCodes: []
 	};
 
 	/** the id of the user */
@@ -82,6 +86,17 @@ export default class User {
 	}>;
 	/** The servers this user is in */
 	servers: Array<string>;
+	/** If this user has mfa enabled on their account */
+	mfaEnabled: boolean;
+	/** If the mfa enabled on this account is verified */
+	mfaVerified: boolean;
+	/** The secret for this account's mfa, if enabled */
+	mfaSecret: string | null;
+	/** The backup codes for this account */
+	mfaBackupCodes: Array<{
+		code: string;
+		used: boolean;
+	}>;
 	constructor(id: string, data: UserProperties) {
 		this.id = id;
 		this.load(data);
@@ -143,8 +158,9 @@ export default class User {
 		});
 	}
 
-	async createAuthToken(ip: string, userAgent?: string) {
-		const token = crypto.randomBytes(32).toString("hex");
+	async createAuthToken(ip: string, userAgent?: string/* , override?: string */) {
+		/* if (config.dev === false && override) throw new TypeError("User.createAuthToken override used in production"); */
+		const token = /* override ??  */crypto.randomBytes(32).toString("hex");
 		let d: User["authTokens"][number]["device"];
 		if (userAgent !== undefined) {
 			const { browser, os, device } = new UserAgent(userAgent).getResult();
@@ -217,7 +233,9 @@ export default class User {
 			[
 				"email",
 				"emailVerified",
-				"connections"
+				"connections",
+				"mfaEnabled",
+				"mfaVerified"
 			],
 			privateProps
 		);
@@ -240,8 +258,11 @@ export default class User {
 	static async getUser(data: string | FilterQuery<GetUserOptions>) {
 		return db.collection("users").findOne(typeof data === "string" ? { id: data } : (data as AnyObject)).then((d) => d ? new User(d.id, d) : null);
 	}
-	static async new(data: Omit<Nullable<DeepPartial<UserProperties>>, "id">) {
-		const id = Snowflake.generate();
+
+	static async new(data: CreateUserOptions, idOverride?: string) {
+		// id override should NOT be used in production
+		if (config.dev === false && idOverride) throw new TypeError("id override used in production.");
+		const id = idOverride ?? Snowflake.generate();
 
 		return db.collection("users").insertOne(
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -318,7 +339,92 @@ export default class User {
 
 		return true;
 	}
+
+	async enableMFA() {
+		if (this.mfaEnabled === true) return null;
+		const { secret, qr } = await Functions.newMFA();
+		const b = await this.resetBackupCodes();
+		await this.edit({
+			mfaEnabled: true,
+			mfaVerified: false,
+			mfaSecret: secret
+		});
+		return { secret, qr, backupCodes: b };
+	}
+
+	async verifyMFA(token: string) {
+		if (this.mfaEnabled === false || this.mfaSecret === null) return false;
+		if (MFA_BACKUP_REGEX.test(token)) {
+			if (this.mfaBackupCodes.map(({ code }) => code).includes(token.toLowerCase())) {
+				const b = this.mfaBackupCodes;
+				if (b.find(({ code }) => code === token.toLowerCase())!.used) return false;
+				b.find(({ code }) => code === token.toLowerCase())!.used = true;
+				await this.mongoEdit({
+					$set: {
+						mfaBackupCodes: b
+					}
+				});
+				return true;
+			}
+		} else {
+			const ver = Functions.verifyMFA(this.mfaSecret, token);
+			if (ver === true) {
+				// we don't need to check already used codes if we're doing first time verification
+				if (this.mfaVerified === false) await this.edit({
+					mfaVerified: true
+				});
+				else {
+					const chk = await Redis.get(`MFA_USED:${this.id}`);
+					if (chk === token) return false;
+					await Redis.setex(`MFA_USED:${this.id}`, MFA_STEP * MFA_WINDOW, token);
+				}
+				return true;
+			}
+		}
+		return false;
+	}
+
+	async createMFALoginToken(ip: string) {
+		const t = crypto.randomBytes(32).toString("hex");
+		await Redis.setex(`MFA:LOGIN:${t}`, MFA_LOGIN_TOKEN_EXPIRY, JSON.stringify({ ip, user: this.id }));
+		return t;
+	}
+
+	static async useMFALoginToken(ip: string, token: string) {
+		const r = await Redis.get(`MFA:LOGIN:${token}`);
+		if (r === null) return null;
+		let v: { ip: string; user: string; };
+		try {
+			v = JSON.parse(r) as typeof v;
+		} catch (e) {
+			return null;
+		}
+		if (v === null) return null;
+		if (v.ip !== ip) {
+			// @TODO notify about change of ip in login
+			return null;
+		}
+		await Redis.del(`MFA:LOGIN:${token}`);
+		return v.user;
+	}
+
+	async resetBackupCodes() {
+		const b: User["mfaBackupCodes"] = [];
+		for (let i = 0; i < MFA_BACKUP_COUNT; i++) b.push({ code: User.genBackupCode(), used: false });
+		await this.mongoEdit({
+			$set: {
+				mfaBackupCodes: b
+			}
+		});
+
+		return b;
+	}
+
+	static genBackupCode() {
+		// 6-6-6, 20 characters total
+		return `${crypto.randomBytes(3).toString("hex")}-${crypto.randomBytes(3).toString("hex")}-${crypto.randomBytes(3).toString("hex")}`;
+	}
 }
 
 export type PublicUser = Pick<User, "id" | "avatar" | "flags" | "handle" | "name">;
-export type PrivateUser = Pick<User, keyof PublicUser | "email" | "emailVerified" | "connections">;
+export type PrivateUser = Pick<User, keyof PublicUser | "email" | "emailVerified" | "connections" | "mfaEnabled" | "mfaVerified">;

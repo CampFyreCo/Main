@@ -3,7 +3,8 @@
     "compilerOptions": {
         "outDir": "./build",
         "baseUrl": "src",
-        "strictPropertyInitialization": false
+        "strictPropertyInitialization": false,
+        "skipLibCheck": true
     },
     "include": [
         "**/*"
@@ -13,7 +14,7 @@
         "build",
         "out",
         "tmp",
-        "logs",
+        "test-files",
         "test"
     ]
 }

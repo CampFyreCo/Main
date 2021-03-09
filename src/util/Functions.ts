@@ -1,10 +1,12 @@
 // / <reference path="./@types/Express.d.ts" />
-import { USER_FLAGS } from "./Constants/General";
+import { MFA_ENCODING, MFA_ISSUER, MFA_LENGTH, MFA_NAME, MFA_STEP, MFA_WINDOW, USER_FLAGS } from "./Constants/General";
 import * as Errors from "./Constants/Errors";
 import { User } from "../db/models";
 import * as fs from "fs-extra";
 import { Request, Response } from "express";
 import Identicon from "identicon.js";
+import QRCode from "qrcode";
+import Speakeasy from "speakeasy";
 import crypto from "crypto";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type JSONReturn<K extends any, N extends Array<keyof K>, O extends Array<keyof K>, T extends boolean = false> = {
@@ -182,12 +184,45 @@ export default class Functions {
 		return `data:image/png;base64,${new Identicon(Functions.md5Hash(data), size).toString()}`;
 	}
 
-	static formatError<K extends keyof typeof Errors = keyof typeof Errors, T extends keyof (typeof Errors[K]) = keyof (typeof Errors[K])>(category: K, type: T, format: Record<string, Uppercase<string>> = {}): typeof Errors[K][T] {
+	static formatError<K extends keyof typeof Errors, T extends keyof (typeof Errors[K])>(category: K, type: T, format: Record<string, string> = {}): typeof Errors[K][T] {
 		/* eslint-disable */
 		const e = (Errors[category] as any)[type] as typeof Errors[K][T];
 		// @ts-ignore
 		Object.keys(format).map(v => e.message = e.message.replace(new RegExp(`%${v.toUpperCase()}%`, "g"), format[v]));
 		return e!;
 		/* eslint-enable */
+	}
+
+	static async toQRCode(data: string, options?: QRCode.QRCodeToDataURLOptions) {
+		return QRCode.toDataURL(data, options);
+	}
+
+	static async newMFA() {
+		const { base32: secret, otpauth_url } = Speakeasy.generateSecret({
+			length: MFA_LENGTH,
+			name: MFA_NAME,
+			issuer: MFA_ISSUER
+		});
+		const qr = await QRCode.toDataURL(otpauth_url!, {
+			type: "image/jpeg",
+			rendererOpts: {
+				quality: 1
+			},
+			width: 256
+		});
+		return {
+			secret,
+			qr
+		};
+	}
+
+	static verifyMFA(secret: string, token: string) {
+		return Speakeasy.totp.verify({
+			secret,
+			encoding: MFA_ENCODING,
+			token,
+			step: MFA_STEP,
+			window: MFA_WINDOW
+		});
 	}
 }
