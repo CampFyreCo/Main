@@ -1,4 +1,4 @@
-import { User } from "../../../db/models";
+import { Server, User } from "../../../db/models";
 import RateLimitHandler from "../../../util/handlers/RatelimitHandler";
 import { CONNECTIONS, EMAIL, HANDLE, MAX_AVATAR_SIZE, MAX_CONNECTIONS, MAX_SAMESITE_CONNECTIONS, NAME, PASSWORD } from "../../../util/Constants/General";
 import Functions from "../../../util/Functions";
@@ -221,6 +221,35 @@ app
 			success: true,
 			data: null
 		});
+	})
+	.get("/@me/servers", async (req, res) => {
+		if (!Functions.verifyUser(req, res, req.data.user)) return;
+		const data = await Promise.all(req.data.user.servers.map(Server.getServer.bind(Server)));
+		res.status(200).json({
+			success: true,
+			data
+		});
+	})
+	.delete("/@me/servers/:id", async (req, res) => {
+		const srv = await Server.getServer(req.params.id);
+		if (srv === null) return res.status(404).json({
+			success: false,
+			data: Functions.formatError("USER", "INVALID_SERVER")
+		});
+		if (!Functions.verifyUser(req, res, req.data.user)) return;
+		if (req.data.user.inServer(req.params.id)) return res.status(404).json({
+			success: false,
+			data: Functions.formatError("USER", "NOT_IN_SERVER")
+		});
+
+		if (srv.owner === req.data.user.id) return res.status(403).json({
+			success: false,
+			data: Functions.formatError("USER", "SERVER_OWNER")
+		});
+
+		await srv.removeMember(req.data.user.id, "leave");
+
+		return res.status(204).end();
 	});
 
 export default app;

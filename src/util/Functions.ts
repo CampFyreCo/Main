@@ -4,6 +4,7 @@ import * as Errors from "./Constants/Errors";
 import { User } from "../db/models";
 import * as fs from "fs-extra";
 import { Request, Response } from "express";
+import Identicon from "identicon.js";
 import crypto from "crypto";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type JSONReturn<K extends any, N extends Array<keyof K>, O extends Array<keyof K>, T extends boolean = false> = {
@@ -113,9 +114,13 @@ export default class Functions {
 	}
 
 	static calcUserFlags(flags: number) {
-		return Object.entries(USER_FLAGS).map(([f, v]) => ({
+		return this.calcFlags(flags, USER_FLAGS);
+	}
+
+	static calcFlags<T extends { [K: string]: number; }>(flags: number, list: T) {
+		return Object.entries(list).map(([f, v]) => ({
 			[f]: (flags & v) !== 0
-		})).reduce((a, b) => ({ ...a, ...b }), {}) as { [K in keyof typeof USER_FLAGS]: boolean; };
+		})).reduce((a, b) => ({ ...a, ...b }), {}) as { [K in keyof T]: boolean; };
 	}
 
 	/**
@@ -171,6 +176,10 @@ export default class Functions {
 			});
 			return false;
 		}
+	}
+
+	static getIdenticon(data: string, size = 128) {
+		return `data:image/png;base64,${new Identicon(Functions.md5Hash(data), size).toString()}`;
 	}
 
 	static formatError<K extends keyof typeof Errors = keyof typeof Errors, T extends keyof (typeof Errors[K]) = keyof (typeof Errors[K])>(category: K, type: T, format: Record<string, Uppercase<string>> = {}): typeof Errors[K][T] {

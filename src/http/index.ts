@@ -35,7 +35,7 @@ app
 		extended: true
 	}))
 	.use(async (req, res, next) => {
-		if (!ALLOWED_METHODS.includes(req.method.toUpperCase())) return res.status(405).json({
+		if (!ALLOWED_METHODS.includes(req.method.toUpperCase() as (typeof ALLOWED_METHODS)[number])) return res.status(405).json({
 			success: false,
 			error: Functions.formatError("CLIENT", "METHOD_NOT_ALLOWED", {
 				METHOD: req.method.toUpperCase()

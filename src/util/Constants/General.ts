@@ -5,6 +5,14 @@ export const USER_FLAGS = {
 	STAFF: 1 << 0,
 	ADMIN: 1 << 1
 } as const;
+// I wanted to do flags, but that runs out after ~30, which we could easily get to eventually,
+// so we're being prepared for the future
+export const SERVER_FEATURES = [
+	"OFFICIAL",
+	"VERIFIED",
+	"PARTNERED",
+	"VANITY_URL"
+] as const;
 // eslint-disable-next-line no-control-regex
 export const EMAIL = /^(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])$/;
 // probably not final
@@ -24,7 +32,7 @@ export const ALLOWED_METHODS = [
 	"DELETE",
 	"HEAD",
 	"OPTIONS"
-];
+] as const;
 export const Colors = {
 	gold: 0xFFD700,
 	orange: 0xFFA500,

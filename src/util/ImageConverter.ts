@@ -43,8 +43,10 @@ export default function ImageConverter(staticPath: string, cache: string) {
 			/* eslint-enable */
 		}
 
-		if (ex === "gif") execFileSync(gifsicle, ["--resize", `${size}x${size}`, "-o", cpath, p]);
-		else {
+		if (ex === "gif") {
+			// if(for some reason this avatar/icon can't be a gif) return res.status(415).end();
+			execFileSync(gifsicle, ["--resize", `${size}x${size}`, "-o", cpath, p]);
+		} else {
 			await new Promise((a, b) => ImageMagick.resize({
 				format: ex,
 				srcPath: p,

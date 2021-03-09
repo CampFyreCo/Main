@@ -137,6 +137,18 @@ export const USER = {
 	INVALID_CONNECTION_ID: {
 		code: 41027,
 		message: "The connection id \"%ID%\" is not valid."
+	},
+	INVALID_SERVER: {
+		code: 41028,
+		message: "That is not a valid server."
+	},
+	NOT_IN_SERVER: {
+		code: 41029,
+		message: "You are not in that server."
+	},
+	SERVER_OWNER: {
+		code: 41030,
+		message: "You cannot leave a server you own."
 	}
 } as const;
 

@@ -3,8 +3,8 @@ import { BCRYPT_ROUNDS, CONNECTIONS } from "../../util/Constants/General";
 import Snowflake from "../../util/Snowflake";
 import Functions from "../../util/Functions";
 import { GetUserOptions } from "../../util/@types/Database";
+import config from "../../config";
 import UserAgent, { IBrowser } from "ua-parser-js";
-import Identicon from "identicon.js";
 import bcrypt from "bcrypt";
 import { FilterQuery, FindOneAndUpdateOption, UpdateQuery } from "mongodb";
 import { AnyObject, DeepPartial, Nullable, WithoutFunctions } from "@uwu-codes/utils";
@@ -19,11 +19,13 @@ export default class User {
 		handle: null,
 		email: null,
 		name: null,
+		bot: false,
 		avatar: null,
 		password: null,
 		emailVerified: false,
 		connections: [],
-		authTokens: []
+		authTokens: [],
+		servers: []
 	};
 
 	/** the id of the user */
@@ -36,6 +38,9 @@ export default class User {
 	email: string | null;
 	/** the (user)name of this user */
 	name: string;
+	// I was considering making this a flag, but making it a property makes things easier
+	/** If this user is a bot account */
+	bot: boolean;
 	/** the avatar of this user */
 	avatar: string | null;
 	/** the bcrypt hashed password of this user*/
@@ -55,17 +60,28 @@ export default class User {
 		/** The value (name/handle) of this connection */
 		value: string;
 	}>;
+	/** The authentication tokens for this account */
 	authTokens: Array<{
+		/** The ip this token was created from */
 		ip: string;
+		/** The token that was used to create this token */
 		userAgent: string | undefined;
+		/** The token itself */
 		token: string;
+		/** The creation date of this token */
 		creation: string;
+		/** The device this token was made from */
 		device: {
+			/** The browser this token was made from */
 			browser: Omit<IBrowser, "major">;
+			/** The type of the device this token was made from */
 			type: string;
+			/** The name of the device this token was made from  */
 			name: string;
 		} | undefined;
 	}>;
+	/** The servers this user is in */
+	servers: Array<string>;
 	constructor(id: string, data: UserProperties) {
 		this.id = id;
 		this.load(data);
@@ -110,10 +126,6 @@ export default class User {
 		});
 
 		return this.refresh();
-	}
-
-	getIdenticon(size = 128) {
-		return `data:image/png;base64,${new Identicon(Functions.md5Hash(this.email!), size).toString()}`;
 	}
 
 	decodeId() {
@@ -243,6 +255,16 @@ export default class User {
 		).then(({ ops: [v] }) => new User(id, v));
 	}
 
+	getIdenticon(size?: number) {
+		return Functions.getIdenticon(this.email ?? this.id, size);
+	}
+	avatarURL(size?: number, ext?: string) {
+		return this.avatar === null ? this.getIdenticon(size) : User.getUserAvatarUrl(this.id, this.avatar, size, ext);
+	}
+	static getUserAvatarUrl(id: string, hash: string, size = 256, ext = "jpg") {
+		return `${config.http.web.avatar}/${id}/${hash}.${ext}?size=${size}`;
+	}
+
 	async addConnection<T extends User["connections"][number]>(type: T["type"], value: T["value"], visibility: T["visibility"]) {
 		const id = Snowflake.generate();
 		const con = {
@@ -268,6 +290,32 @@ export default class User {
 				connections: this.connections.find(c => c.id === id)
 			}
 		});
+		return true;
+	}
+
+	inServer(id: string) {
+		return this.servers.includes(id);
+	}
+
+	async addServer(id: string) {
+		if (this.inServer(id)) return false;
+		await this.mongoEdit({
+			$push: {
+				servers: id
+			}
+		});
+
+		return true;
+	}
+
+	async removeServer(id: string) {
+		if (!this.inServer(id)) return false;
+		await this.mongoEdit({
+			$pull: {
+				servers: id
+			}
+		});
+
 		return true;
 	}
 }

@@ -1,102 +1,73 @@
-import { Redis } from "../../db";
-import RateLimits from "../Constants/RateLimits";
-import { CLIENT as ClientErrors } from "../Constants/Errors";
-import { Request, Response, NextFunction } from "express";
+import { Redis as storeClient } from "../../db";
+import RateLimits, { RateLimitTypes } from "../Constants/RateLimits";
+import Functions from "../Functions";
+import { RateLimiterRedis, RateLimiterRes } from "rate-limiter-flexible";
+import { RequestHandler } from "express";
 
-export interface RateLimitInfo {
-	limit: number;
-	remaining: number;
-	usage: number;
-	creation: number;
-	reset: number;
-	usable: boolean;
-}
-export type RateLimitTypes = Exclude<keyof typeof RateLimits, "prototype">;
 export default class RateLimitHandler {
-	static getHeaders({ limit, remaining, reset }: RateLimitInfo) {
-		return {
-			"X-RateLimit-Limit": limit,
-			"X-RateLimit-Remaining": remaining,
-			"X-RateLimit-Reset": reset
-		};
-	}
+	static HANDLERS = new Map<RateLimitTypes, RequestHandler>();
+	static LIST = new Map<RateLimitTypes, RateLimiterRedis>();
 
-	static handle(type: RateLimitTypes) {
-		return (async (req: Request, res: Response, next: NextFunction) => {
-			const rl = await RateLimitHandler.consume(type, !req.data.user ? req.sessionID : req.data.user.id);
-			res.header(RateLimitHandler.getHeaders(rl));
-			if (rl.usable === false) res.status(429).json({
-				success: false,
-				error: ClientErrors.RATE_LIMITED
-			});
-			else return next();
+	static init() {
+		Object.keys(RateLimits).map((k) => {
+			const name = k as RateLimitTypes;
+			const [points, duration] = RateLimits[name];
+			/* this.LIST.set(name, RateLimiter({
+				store: this.STORE,
+				max,
+				windowMs,
+				headers: true,
+				draft_polli_ratelimit_headers: true,
+				handler: (req, res) => res.status(429).json({
+					success: false,
+					error: Functions.formatError("CLIENT", "RATE_LIMITED")
+				})
+			})); */
+			this.LIST.set(name, new RateLimiterRedis({
+				storeClient,
+				keyPrefix: "RATELIMITER",
+				points,
+				duration
+			}));
+
+			this.HANDLERS.set(name, (async (req, res, next) => this.LIST.get(name)!
+				.consume(Functions.md5Hash(req.ip))
+				.then(({ remainingPoints: rem, msBeforeNext: ms }) => {
+					const d = new Date();
+					res.header({
+						"Date": d.toUTCString(),
+						"X-RateLimit-Limit": RateLimits[name][0],
+						"X-RateLimit-Remaining": rem,
+						"X-Rate-Limit-Reset": new Date(d.getTime() + ms).getTime() / 1000,
+						"RateLimit-Limit": RateLimits[name][0],
+						"RateLimit-Remaining": rem,
+						"Rate-Limit-Reset": new Date(d.getTime() + ms).getTime() / 1000
+					});
+					next();
+				})
+				.catch(({ remainingPoints: rem, msBeforeNext: ms }: RateLimiterRes) => {
+					const d = new Date();
+					res.header({
+						"Retry-After": ms / 1000,
+						"Date": d.toUTCString(),
+						"X-RateLimit-Limit": RateLimits[name][0],
+						"X-RateLimit-Remaining": rem,
+						"X-Rate-Limit-Reset": new Date(d.getTime() + ms).getTime() / 1000,
+						"RateLimit-Limit": RateLimits[name][0],
+						"RateLimit-Remaining": rem,
+						"Rate-Limit-Reset": new Date(d.getTime() + ms).getTime() / 1000
+					});
+					res.status(429).json({
+						success: false,
+						error: Functions.formatError("CLIENT", "RATE_LIMITED")
+					});
+				})));
 		});
 	}
 
-	static async get(type: RateLimitTypes, id: string): Promise<RateLimitInfo> {
-		const t = Date.now();
-		const limit = RateLimits[type][0];
-		const time = RateLimits[type][1];
-		const v = await Redis.get(`ratelimiting:${type}:${id}`);
-		if (v === null) return {
-			limit,
-			remaining: limit,
-			usage: 0,
-			creation: 0,
-			reset: 0,
-			usable: true
-		};
-		else {
-			let c = { creation: 0, usage: 0 };
-			try {
-				c = JSON.parse(v) as typeof c;
-			} catch (e) {
-				if (e instanceof Error) { // thanks typescript
-					throw new Error(`Failed to decode redis key "ratelimiting:${type}:${id}", ${e.toString()}`);
-				}
-			}
-
-			// console.log(((c.creation + time) - t) / 1e3, "seconds remaining");
-			if ((c.creation + time) < t) {
-				await Redis.del(`ratelimiting:${type}:${id}`);
-				return {
-					limit,
-					remaining: limit,
-					usage: 0,
-					creation: 0,
-					reset: 0,
-					usable: true
-				};
-			}
-
-			return {
-				limit,
-				remaining: limit - c.usage,
-				usage: c.usage,
-				creation: c.creation,
-				reset: c.creation + time,
-				usable: c.usage < limit
-			};
-		}
-	}
-
-	static async consume(type: RateLimitTypes, id: string, amount = 1) {
-		const t = Date.now();
-		const v = await this.get(type, id);
-		if (v.remaining > 0) {
-			let ttl = await Redis.pttl(`ratelimiting:${type}:${id}`);
-			// -2 = does not exist
-			// -1 = exists, no ttl
-			// https://redis.io/commands/TTL
-			if (ttl === -2) ttl = RateLimits[type][1];
-			else if (ttl === -1) {
-				await Redis.del(`ratelimiting:${type}:${id}`);
-				ttl = RateLimits[type][1];
-			}
-			if (ttl !== 0) await Redis.psetex(`ratelimiting:${type}:${id}`, ttl, JSON.stringify({ creation: v.creation || t, usage: v.usage + amount }));
-		}
-		const n = await this.get(type, id);
-		if (v.remaining > 0) n.usable = true;
-		return n;
+	static handle(type: RateLimitTypes) {
+		return this.HANDLERS.get(type)!;
 	}
 }
+
+RateLimitHandler.init();
