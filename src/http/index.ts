@@ -16,7 +16,7 @@ app
 	.set("view engine", "pug")
 	.set("views", config.dir.views.templates)
 	.use(session({
-		name: "yiff",
+		name: "fyre",
 		secret: config.http.secret,
 		cookie: {
 			domain: config.http.address,
