@@ -29,7 +29,8 @@ export default class User {
 		mfaEnabled: false,
 		mfaVerified: false,
 		mfaSecret: null,
-		mfaBackupCodes: []
+		mfaBackupCodes: [],
+		handleLocked: false
 	};
 
 	/** the id of the user */
@@ -97,6 +98,8 @@ export default class User {
 		code: string;
 		used: boolean;
 	}>;
+	/** If this user cannot change their handle */
+	handleLocked: boolean;
 	constructor(id: string, data: UserProperties) {
 		this.id = id;
 		this.load(data);

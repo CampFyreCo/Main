@@ -26,17 +26,50 @@ app
 		if (!Functions.verifyUser(req, res, req.data.user)) return;
 		const b = req.body as AnyObject<string>;
 		const d: Partial<{ handle: string; name: string; email: string; avatar: string; }> = {};
-		if (!b.password) return res.status(400).json({
-			success: false,
-			error: Functions.formatError("USER", "PASSWORD_REQUIRED")
-		});
+		let passwordChange = false;
+		if (req.data.user.bot === false) {
+			if (!b.password) return res.status(400).json({
+				success: false,
+				error: Functions.formatError("USER", "PASSWORD_REQUIRED")
+			});
 
-		if (!req.data.user.checkPassword(b.password)) return res.status(401).json({
-			success: false,
-			error: Functions.formatError("USER", "INCORRECT_PASSWORD")
-		});
+			if (!req.data.user.checkPassword(b.password)) return res.status(401).json({
+				success: false,
+				error: Functions.formatError("USER", "INCORRECT_PASSWORD")
+			});
+
+
+			if (b.email) {
+				if (!EMAIL.test(b.email.toString())) return res.status(422).json({
+					success: false,
+					error: Functions.formatError("USER", "INVALID_EMAIL")
+				});
+				// the start of emails is technically case sensitive, so we have to do it with regex
+				// https://stackoverflow.com/q/9807909/#comment40364273_9808332
+				const e = await User.getUser({ email: new RegExp(`^${b.email}$`.toLowerCase(), "i") });
+				if (e !== null) return res.status(409).json({
+					success: false,
+					error: Functions.formatError("USER", "EMAIL_IN_USE")
+				});
+
+				d.email = b.email.toLowerCase();
+			}
+
+			if (b.newPassword) {
+				if (!PASSWORD.test(b.newPassword)) return res.status(422).json({
+					success: false,
+					error: Functions.formatError("USER", "INVALID_PASSWORD")
+				});
+				await req.data.user.setPassword(b.newPassword);
+				passwordChange = true;
+			}
+		}
 
 		if (b.handle) {
+			if (req.data.user.handleLocked === true) return res.status(403).json({
+				success: false,
+				error: Functions.formatError("USER", "HANDLE_LOCKED")
+			});
 			if (!HANDLE.test(b.handle.toString())) return res.status(422).json({
 				success: false,
 				error: Functions.formatError("USER", "INVALID_HANDLE")
@@ -57,32 +90,6 @@ app
 			});
 
 			d.name = b.name;
-		}
-
-		if (b.email) {
-			if (!EMAIL.test(b.email.toString())) return res.status(422).json({
-				success: false,
-				error: Functions.formatError("USER", "INVALID_EMAIL")
-			});
-			// the start of emails is technically case sensitive, so we have to do it with regex
-			// https://stackoverflow.com/q/9807909/#comment40364273_9808332
-			const e = await User.getUser({ email: new RegExp(`^${b.email}$`.toLowerCase(), "i") });
-			if (e !== null) return res.status(409).json({
-				success: false,
-				error: Functions.formatError("USER", "EMAIL_IN_USE")
-			});
-
-			d.email = b.email.toLowerCase();
-		}
-
-		let passwordChange = false;
-		if (b.newPassword) {
-			if (!PASSWORD.test(b.newPassword)) return res.status(422).json({
-				success: false,
-				error: Functions.formatError("USER", "INVALID_PASSWORD")
-			});
-			await req.data.user.setPassword(b.newPassword);
-			passwordChange = true;
 		}
 
 		if (b.avatar) {
@@ -151,6 +158,10 @@ app
 	})
 	.put("/@me/connections", RateLimitHandler.handle("ADD_CONNECTION"), async (req, res) => {
 		if (!Functions.verifyUser(req, res, req.data.user)) return;
+		if (req.data.user.bot === true) return res.status(403).json({
+			success: false,
+			error: Functions.formatError("USER", "BOTS_CANNOT_USE_THIS_ENDPOINT")
+		});
 		const b = req.body as AnyObject<string>;
 		if (!b.type) return res.status(400).json({
 			success: false,
@@ -197,6 +208,10 @@ app
 	})
 	.delete("/@me/connections/:id", RateLimitHandler.handle("REMOVE_CONNECTION"), async (req, res) => {
 		if (!Functions.verifyUser(req, res, req.data.user)) return;
+		if (req.data.user.bot === true) return res.status(403).json({
+			success: false,
+			error: Functions.formatError("USER", "BOTS_CANNOT_USE_THIS_ENDPOINT")
+		});
 		const r = await req.data.user.removeConnection(req.params.id);
 		if (r === false) return res.status(404).json({
 			success: false,
@@ -238,6 +253,10 @@ app
 	})
 	.post("/@me/mfa", RateLimitHandler.handle("ENABLE_MFA"), async (req, res) => {
 		if (!Functions.verifyUser(req, res, req.data.user)) return;
+		if (req.data.user.bot === true) return res.status(403).json({
+			success: false,
+			error: Functions.formatError("USER", "BOTS_CANNOT_USE_THIS_ENDPOINT")
+		});
 		const b = req.body as AnyObject<string>;
 
 		if (!b.password) return res.status(400).json({
@@ -263,6 +282,10 @@ app
 	})
 	.delete("/@me/mfa", RateLimitHandler.handle("DISABLE_MFA"), async (req, res) => {
 		if (!Functions.verifyUser(req, res, req.data.user)) return;
+		if (req.data.user.bot === true) return res.status(403).json({
+			success: false,
+			error: Functions.formatError("USER", "BOTS_CANNOT_USE_THIS_ENDPOINT")
+		});
 		const b = req.body as AnyObject<string>;
 
 		if (!b.password) return res.status(400).json({
@@ -305,6 +328,10 @@ app
 	})
 	.put("/@me/mfa/verify", RateLimitHandler.handle("VERIFY_MFA"), async (req, res) => {
 		if (!Functions.verifyUser(req, res, req.data.user)) return;
+		if (req.data.user.bot === true) return res.status(403).json({
+			success: false,
+			error: Functions.formatError("USER", "BOTS_CANNOT_USE_THIS_ENDPOINT")
+		});
 		const b = req.body as AnyObject<string>;
 		if (!b.code) return res.status(400).json({
 			success: false,
@@ -320,6 +347,10 @@ app
 	})
 	.get("/@me/mfa/backup-codes", RateLimitHandler.handle("GET_BACKUP_CODES"), async (req, res) => {
 		if (!Functions.verifyUser(req, res, req.data.user)) return;
+		if (req.data.user.bot === true) return res.status(403).json({
+			success: false,
+			error: Functions.formatError("USER", "BOTS_CANNOT_USE_THIS_ENDPOINT")
+		});
 		const b = req.body as AnyObject<string>;
 
 		if (req.data.user.mfaEnabled === false) return res.status(400).json({
@@ -344,6 +375,10 @@ app
 	})
 	.post("/@me/mfa/backup-codes/reset", RateLimitHandler.handle("RESET_BACKUP_CODES"), async (req, res) => {
 		if (!Functions.verifyUser(req, res, req.data.user)) return;
+		if (req.data.user.bot === true) return res.status(403).json({
+			success: false,
+			error: Functions.formatError("USER", "BOTS_CANNOT_USE_THIS_ENDPOINT")
+		});
 		const b = req.body as AnyObject<string>;
 
 		if (req.data.user.mfaEnabled === false) return res.status(400).json({

@@ -1,6 +1,7 @@
 import {
-	UserProperties,
-	ServerProperties
+	InviteProperties,
+	ServerProperties,
+	UserProperties
 } from "./models";
 import config from "../config";
 import Logger from "../util/Logger";
@@ -57,6 +58,7 @@ class Database {
 		return this.mongo.db(config.services.db.db);
 	}
 
+	static collection(col: "invites"): Collection<WithId<InviteProperties>>;
 	static collection(col: "servers"): Collection<WithId<ServerProperties>>;
 	static collection(col: "users"): Collection<WithId<UserProperties>>;
 	static collection<T = unknown>(col: string): Collection<T>;

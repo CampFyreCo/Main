@@ -58,6 +58,12 @@ app
 			error: Functions.formatError("USER", "NO_USER_FOUND")
 		});
 
+
+		if (u.bot === true) return res.status(403).json({
+			success: false,
+			error: Functions.formatError("USER", "BOTS_CANNOT_USE_THIS_ENDPOINT")
+		});
+
 		if (u.password === null) return res.status(403).json({
 			success: false,
 			error: Functions.formatError("USER", "NO_PASSWORD")
@@ -217,6 +223,11 @@ app
 
 		if (u === null) return res.status(404).end("Unknown user.");
 
+		if (u.bot === true) return res.status(403).json({
+			success: false,
+			error: Functions.formatError("USER", "BOTS_CANNOT_USE_THIS_ENDPOINT")
+		});
+
 		await u.edit({
 			emailVerified: true
 		});
@@ -228,6 +239,10 @@ app
 	.use(AuthHandler.handle())
 	.post("/confirm-email", RateLimitHandler.handle("CONFIRM_EMAIL_START"), async (req, res) => {
 		if (!Functions.verifyUser(req, res, req.data.user)) return;
+		if (req.data.user.bot === true) return res.status(403).json({
+			success: false,
+			error: Functions.formatError("USER", "BOTS_CANNOT_USE_THIS_ENDPOINT")
+		});
 		if (req.data.user.emailVerified) return res.status(403).json({
 			success: false,
 			error: Functions.formatError("USER", "EMAIL_ALREADY_VEIRIFED")
@@ -242,6 +257,7 @@ app
 
 		return res.status(204).end();
 	})
+	.use("/invites", require("./invites").default)
 	.use("/servers", require("./servers").default)
 	.use("/users", require("./users").default);
 

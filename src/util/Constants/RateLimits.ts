@@ -22,4 +22,6 @@ export default class RateLimits {
 	static VERIFY_MFA = [3, 120] as RateLimit;
 	static GET_BACKUP_CODES = [2, 120] as RateLimit;
 	static RESET_BACKUP_CODES = [2, 120] as RateLimit;
+	static GET_INVITE = [5, 30] as RateLimit;
+	static USE_INVITE = [3, 120] as RateLimit;
 }

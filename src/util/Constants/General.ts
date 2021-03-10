@@ -86,3 +86,6 @@ export const MFA_WINDOW = 2;
 export const MFA_LOGIN_TOKEN_EXPIRY = 60;
 export const MFA_BACKUP_REGEX = /^[\da-f]{6}-[\da-f]{6}-[\da-f]{6}$/i;
 export const MFA_BACKUP_COUNT = 5;
+
+export const INVITE_KEYSET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+export const INVITE_LENGTH = 7;
