@@ -200,6 +200,10 @@ export const INTERNAL = {
 		code: 500,
 		message: "An unknown internal server error occured."
 	},
+	NOT_IMPLEMENTED: {
+		code: 501,
+		message: "This has not been implemented yet."
+	},
 	TOO_LARGE: {
 		code: 513,
 		message: "Whatever you tried to upload was too large. You sent %LENGTH% bytes. Keep it under %MAX% bytes."

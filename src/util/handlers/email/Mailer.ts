@@ -70,14 +70,14 @@ export default class Mailer {
 				HANDLE: user.handle,
 				EMAIL: user.email,
 				TOKEN: token,
-				URL: `${config.http.web.public}/confirm-email?token=${token}`
+				URL: `${config.http.web.api}/confirm-email?token=${token}`
 			}),
 			Templater.parseString(t.content.body, {
 				NAME: user.name,
 				HANDLE: user.handle,
 				EMAIL: user.email,
 				TOKEN: token,
-				URL: `${config.http.web.public}/confirm-email?token=${token}`
+				URL: `${config.http.web.api}/confirm-email?token=${token}`
 			})
 		).then(({ rejected: { length } }) => length === 0);
 	}

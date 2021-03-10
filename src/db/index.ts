@@ -76,4 +76,5 @@ export {
 	mongo,
 	Redis
 };
+
 export default Database;

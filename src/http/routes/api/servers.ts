@@ -27,6 +27,7 @@ app
 			data: srv.toJSON()
 		});
 	})
+	// @TODO
 	.patch("/:id", RateLimitHandler.handle("EDIT_SERVER"), async (req, res) => {
 		if (!Functions.verifyUser(req, res, req.data.user)) return;
 		const srv = await Server.getServer(req.params.id);
@@ -40,6 +41,11 @@ app
 		});
 		// roles & permissions
 
+		// I know this isn't what this status code is for, but I don't care
+		return res.status(501).json({
+			success: false,
+			error: Functions.formatError("INTERNAL", "NOT_IMPLEMENTED")
+		});
 	})
 	.delete("/:id", RateLimitHandler.handle("DELETE_SERVER"), async (req, res) => {
 		if (!Functions.verifyUser(req, res, req.data.user)) return;

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-var-requires */
 import AuthHandler from "../../../util/handlers/AuthHandler";
 import Verification from "../../../util/handlers/email/Verification";
 import { User } from "../../../db/models";
@@ -20,7 +21,7 @@ app
 
 		return next();
 	})
-	.post("/login", RateLimitHandler.handle("USER_LOGIN"),async (req, res) => {
+	.post("/login", RateLimitHandler.handle("USER_LOGIN"), async (req, res) => {
 		const b = req.body as AnyObject<string>;
 		if (!b.email && !b.handle) return res.status(400).json({
 			success: false,
@@ -241,7 +242,7 @@ app
 
 		return res.status(204).end();
 	})
-	// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-var-requires
+	.use("/servers", require("./servers").default)
 	.use("/users", require("./users").default);
 
 export default app;

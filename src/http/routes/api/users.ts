@@ -149,21 +149,6 @@ app
 
 		});
 	})
-	.get("/:id", RateLimitHandler.handle("GET_USER"), async (req, res) => {
-		if (!Functions.verifyUser(req, res, req.data.user)) return;
-		const u = await User.getUser({ id: req.params.id });
-		if (u === null) {
-			return res.status(404).json({
-				success: false,
-				error: Functions.formatError("USER", "UNKNOWN")
-			});
-		} else {
-			return res.status(200).json({
-				success: true,
-				data: u.toJSON(false)
-			});
-		}
-	})
 	.put("/@me/connections", RateLimitHandler.handle("ADD_CONNECTION"), async (req, res) => {
 		if (!Functions.verifyUser(req, res, req.data.user)) return;
 		const b = req.body as AnyObject<string>;
@@ -380,6 +365,21 @@ app
 			success: true,
 			data: await req.data.user.resetBackupCodes()
 		});
+	})
+	.get("/:id", RateLimitHandler.handle("GET_USER"), async (req, res) => {
+		if (!Functions.verifyUser(req, res, req.data.user)) return;
+		const u = await User.getUser({ id: req.params.id });
+		if (u === null) {
+			return res.status(404).json({
+				success: false,
+				error: Functions.formatError("USER", "UNKNOWN")
+			});
+		} else {
+			return res.status(200).json({
+				success: true,
+				data: u.toJSON(false)
+			});
+		}
 	});
 
 export default app;
