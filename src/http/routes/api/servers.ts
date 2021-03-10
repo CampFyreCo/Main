@@ -2,10 +2,35 @@ import RateLimitHandler from "../../../util/handlers/RatelimitHandler";
 import Functions from "../../../util/Functions";
 import { PublicServer, Server, ServerMember } from "../../../db/models";
 import express from "express";
+import { AnyObject } from "@uwu-codes/utils";
 
 const app = express.Router();
 
 app
+	.post("/", RateLimitHandler.handle("CREATE_SERVER"), async (req, res) => {
+		if (!Functions.verifyUser(req, res, req.data.user)) return;
+		const b = req.body as AnyObject<string>;
+		if (!b.name) return res.status(400).json({
+			success: false,
+			data: Functions.formatError("SERVER", "NAME_REQUIRED")
+		});
+		// @TODO server name limits
+
+		const srv = await Server.new({
+			name: b.name,
+			owner: req.data.user.id
+		}, true);
+
+		if (srv === null) return res.status(500).json({
+			success: false,
+			data: Functions.formatError("INTERNAL", "UNKNOWN")
+		});
+
+		return res.status(201).json({
+			success: true,
+			data: srv.toJSON()
+		});
+	})
 	.get("/:id", RateLimitHandler.handle("GET_SERVER"), async (req, res) => {
 		if (!Functions.verifyUser(req, res, req.data.user)) return;
 		const srv = await Server.getServer(req.params.id);

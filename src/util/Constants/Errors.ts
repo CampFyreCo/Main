@@ -52,6 +52,10 @@ export const SERVER = {
 	OWNER: {
 		code: 42001,
 		message: "You cannot leave a server you own."
+	},
+	NAME_REQUIRED: {
+		code: 42002,
+		message: "A name is required."
 	}
 };
 

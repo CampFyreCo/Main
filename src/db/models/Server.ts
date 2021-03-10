@@ -127,7 +127,7 @@ export default class Server {
 		return db.collection("servers").findOne(typeof data === "string" ? { id: data } : (data as AnyObject)).then((d) => d ? new Server(d.id, d) : null);
 	}
 
-	static async new(data: CreateServerOptions, idOverride?: string) {
+	static async new(data: CreateServerOptions, addOwner = false, idOverride?: string) {
 		// id override should NOT be used in production
 		if (config.dev === false && idOverride) throw new TypeError("id override used in production.");
 		const id = idOverride ?? Snowflake.generate();
@@ -141,7 +141,11 @@ export default class Server {
 				},
 				this.DEFAULTS
 			)
-		).then(({ ops: [v] }) => new Server(id, v));
+		).then(async ({ ops: [v] }) => {
+			const srv = new Server(id, v);
+			if (addOwner) await srv.addMember(srv.owner);
+			return srv;
+		});
 	}
 
 	getIdenticon(size?: number) {
