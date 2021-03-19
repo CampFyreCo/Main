@@ -1,4 +1,5 @@
 import {
+	ChannelProperties,
 	InviteProperties,
 	ServerProperties,
 	UserProperties
@@ -58,6 +59,7 @@ class Database {
 		return this.mongo.db(config.services.db.db);
 	}
 
+	static collection(col: "channels"): Collection<WithId<ChannelProperties>>;
 	static collection(col: "invites"): Collection<WithId<InviteProperties>>;
 	static collection(col: "servers"): Collection<WithId<ServerProperties>>;
 	static collection(col: "users"): Collection<WithId<UserProperties>>;

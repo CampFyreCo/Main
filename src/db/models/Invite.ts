@@ -1,3 +1,5 @@
+import { Server } from ".";
+import { PublicServer } from "./Server";
 import db, { mdb } from "..";
 import Snowflake from "../../util/Snowflake";
 import Functions from "../../util/Functions";
@@ -81,8 +83,13 @@ export default class Invite {
 
 	/**
 	 * Convert this invite object into a JSON representation.
+	 *
+	 * @param {boolean} [fetch=false] - If we should fetch some entities related to this invite.
 	 */
-	toJSON(): PublicInvite & { createdAt: string; } {
+	toJSON(fetch: true): Promise<PublicInviteFetched>;
+	toJSON(fetch?: false): PublicInvite;
+	toJSON(fetch?: boolean): PublicInvite | Promise<PublicInviteFetched>;
+	toJSON(fetch = false): PublicInvite | Promise<PublicInviteFetched> {
 		const t = Functions.toJSON(
 			this,
 			[
@@ -91,16 +98,29 @@ export default class Invite {
 				"creator",
 				"totalUses",
 				"maxUses",
-				"expire",
+				"expire"
+			],
+			[
 				"serverId"
 			],
-			[],
-			false
+			!fetch
 		);
 		Object.defineProperty(t, "createdAt", {
 			value: new Date(Snowflake.decode(this.id).timestamp).toISOString()
 		});
-		return t as typeof t & { createdAt: string; };
+
+		return fetch ? Promise.resolve(async () => {
+			const srv = await this.getServer();
+			return {
+				...t as PublicInvite,
+				server: srv!.toJSON()
+			} as PublicInviteFetched;
+		}).then((f) => f()) : t as PublicInvite;
+
+	}
+
+	async getServer() {
+		return Server.getServer({ id: this.serverId });
 	}
 
 	static isInvite(obj: unknown): obj is Invite {
@@ -110,7 +130,13 @@ export default class Invite {
 		return db.collection("invites").findOne(typeof data === "string" ? { id: data } : (data as AnyObject)).then((d) => d ? new Invite(d.id, d) : null);
 	}
 
-	static async new(data: CreateInviteOptions, codeOverride?: string) {
+	static async new(data: CreateInviteOptions, server: Server | string, codeOverride?: string) {
+		if (!Server.isServer(server)) {
+			const s = await Server.getServer({ id: server });
+			if (s === null) throw new TypeError("Invalid server in Invite.new");
+			server = s;
+		}
+
 		// code override WILL be used in production for vanity urls
 		const id = Snowflake.generate();
 		const code = codeOverride ?? Invite.getCode();
@@ -121,11 +147,20 @@ export default class Invite {
 				{
 					...data,
 					code,
-					id
+					id,
+					serverId: server.id
 				},
 				this.DEFAULTS
 			)
-		).then(({ ops: [v] }) => new Invite(id, v));
+		).then(async ({ ops: [v] }) => {
+			// it should be reduced to this already, but it isn't?
+			await (server as Server).mongoEdit({
+				$push: {
+					invites: id
+				}
+			});
+			return new Invite(id, v);
+		});
 	}
 
 	static getCode(len = INVITE_LENGTH) {
@@ -135,4 +170,5 @@ export default class Invite {
 	}
 }
 
-export type PublicInvite = Pick<Invite, "id" | "code" | "creator" | "totalUses" | "maxUses" | "expire" | "serverId">;
+export type PublicInvite = Pick<Invite, "id" | "code" | "creator" | "totalUses" | "maxUses" | "expire" | "serverId"> & { createdAt: string; };
+export type PublicInviteFetched = Omit<PublicInvite, "serverId"> & { server: PublicServer; };

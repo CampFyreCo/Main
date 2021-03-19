@@ -181,8 +181,9 @@ app
 		const u = await User.new({
 			email: b.email,
 			handle: b.handle.toLowerCase(),
-			name: b.handle.toLowerCase()
-		}).then((v) => v === null ? null : new User(v.id, v));
+			handleDisplay: b.handle,
+			name: b.handle
+		});
 
 		if (u === null) return res.status(500).json({
 			success: false,

@@ -8,19 +8,15 @@ const app = express.Router();
 app
 	.get("/:code", RateLimitHandler.handle("GET_INVITE"), async (req, res) => {
 		if (!Functions.verifyUser(req, res, req.data.user)) return;
-		const inv = await Invite.getInvite({ code: req.params.code.toLowerCase() });
+		const inv = await Invite.getInvite({ code: req.params.code.toUpperCase() });
 		if (inv === null) return res.status(404).json({
 			success: false,
 			data: Functions.formatError("INVITE", "UNKNOWN")
 		});
-		if (!req.data.user.inServer(req.params.id)) return res.status(403).json({
-			success: false,
-			data: Functions.formatError("USER", "NO_ACCESS_SERVER")
-		});
 
 		return res.status(200).json({
 			success: false,
-			data: inv.toJSON()
+			data: await inv.toJSON(true)
 		});
 	})
 	.post("/:code/use", RateLimitHandler.handle("USE_INVITE"), async (req, res) => {
@@ -30,7 +26,7 @@ app
 			error: Functions.formatError("USER", "BOTS_CANNOT_USE_THIS_ENDPOINT")
 		});
 
-		const inv = await Invite.getInvite({ code: req.params.code.toLowerCase() });
+		const inv = await Invite.getInvite({ code: req.params.code.toUpperCase() });
 		if (inv === null) return res.status(404).json({
 			success: false,
 			data: Functions.formatError("INVITE", "UNKNOWN")

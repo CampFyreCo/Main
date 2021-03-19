@@ -13,6 +13,7 @@ export default class RateLimits {
 	static GET_SERVER = [5, 30] as RateLimit;
 	static EDIT_SERVER = [5, 30] as RateLimit;
 	static DELETE_SERVER = [2, 60] as RateLimit;
+	static GET_SERVER_INVITES = [3, 30] as RateLimit;
 	static USER_LOGIN = [3, 30] as RateLimit;
 	static USER_LOGIN_MFA = [3, 30] as RateLimit;
 	static USER_REGISTER = [2, 30] as RateLimit;
@@ -24,5 +25,5 @@ export default class RateLimits {
 	static GET_BACKUP_CODES = [2, 120] as RateLimit;
 	static RESET_BACKUP_CODES = [2, 120] as RateLimit;
 	static GET_INVITE = [5, 30] as RateLimit;
-	static USE_INVITE = [3, 120] as RateLimit;
+	static USE_INVITE = [3, 60] as RateLimit;
 }

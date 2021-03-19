@@ -1,12 +1,24 @@
 import ConnectionsHandler from "../handlers/ConnectionsHandler";
 import { Encoding } from "speakeasy";
 
+/* users */
 export const BCRYPT_ROUNDS = 12;
 export const USER_FLAGS = {
 	STAFF: 1 << 0,
 	VERIFIED: 1 << 1,
 	SYSTEM: 1 << 2
 } as const;
+
+// eslint-disable-next-line no-control-regex
+export const EMAIL = /^(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])$/;
+// probably not final
+export const PASSWORD = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,64}$/;
+export const HANDLE = /^[a-z\d_-]{2,16}$/i; // Max 64^16 handles
+// this NEEDS to be narrowed
+export const NAME = /^.{2,}$/i;
+
+
+/* servers */
 // I wanted to do flags, but that runs out after ~30, which we could easily get to eventually,
 // so we're being prepared for the future
 export const SERVER_FEATURES = [
@@ -15,13 +27,8 @@ export const SERVER_FEATURES = [
 	"PARTNERED",
 	"VANITY_URL"
 ] as const;
-// eslint-disable-next-line no-control-regex
-export const EMAIL = /^(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])$/;
-// probably not final
-export const PASSWORD = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,64}$/;
-export const HANDLE = /^[a-z\d_-]{2,16}$/i; // Max 64^16 handles
-// this NEEDS to be narrowed
-export const NAME = /^.{2,}$/i;
+
+/* limits */
 // 5 Megabytes, ~2048x2048
 export const MAX_AVATAR_SIZE = 5e+6;
 export const MIN_IMAGE_SIZE = 16;
@@ -35,6 +42,8 @@ export const ALLOWED_METHODS = [
 	"HEAD",
 	"OPTIONS"
 ] as const;
+
+/* colors */
 export const Colors = {
 	gold: 0xFFD700,
 	orange: 0xFFA500,
@@ -59,8 +68,9 @@ export const Colors = {
 		return Math.floor(Math.random() * 0xFFFFFF);
 	}
 };
-export type ConnectionProperty = "noVerification" | "verificationRequired" | "noLink";
 
+/* user connections*/
+export type ConnectionProperty = "noVerification" | "verificationRequired" | "noLink";
 export interface Connection {
 	url: string | null;
 	name: string;
@@ -68,7 +78,6 @@ export interface Connection {
 	validationRegex: RegExp;
 }
 
-/* start user connections*/
 export const CONNECTIONS = ConnectionsHandler.VALID;
 export const MAX_SAMESITE_CONNECTIONS = 3;
 export const MAX_CONNECTIONS = 15;
@@ -87,5 +96,11 @@ export const MFA_LOGIN_TOKEN_EXPIRY = 60;
 export const MFA_BACKUP_REGEX = /^[\da-f]{6}-[\da-f]{6}-[\da-f]{6}$/i;
 export const MFA_BACKUP_COUNT = 5;
 
+/* invites */
 export const INVITE_KEYSET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 export const INVITE_LENGTH = 7;
+
+/* channels */
+export const CHANNEL_TYPES = {
+	TEXT: 0
+};

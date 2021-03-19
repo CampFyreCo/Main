@@ -83,6 +83,23 @@ app
 			success: false,
 			data: Functions.formatError("USER", "NO_ACCESS_SERVER")
 		});
+	})
+	.get("/:id/invites", RateLimitHandler.handle("GET_SERVER_INVITES"), async (req, res) => {
+		if (!Functions.verifyUser(req, res, req.data.user)) return;
+		const srv = await Server.getServer(req.params.id);
+		if (srv === null) return res.status(404).json({
+			success: false,
+			data: Functions.formatError("SERVER", "UNKNOWN")
+		});
+		if (!req.data.user.inServer(req.params.id)) return res.status(403).json({
+			success: false,
+			data: Functions.formatError("USER", "NO_ACCESS_SERVER")
+		});
+
+		return res.status(200).json({
+			success: false,
+			data: await srv.getInvites()
+		});
 	});
 
 export default app;

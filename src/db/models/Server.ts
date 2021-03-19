@@ -1,4 +1,5 @@
 import User from "./User";
+import Invite from "./Invite";
 import db, { mdb } from "..";
 import Snowflake from "../../util/Snowflake";
 import Functions from "../../util/Functions";
@@ -31,7 +32,9 @@ export default class Server {
 		owner: null,
 		icon: null,
 		vanityURL: null,
-		members: []
+		members: [],
+		invites: [],
+		channels: []
 	};
 
 	/** the id of the server */
@@ -48,6 +51,10 @@ export default class Server {
 	vanityURL: string | null;
 	/** The members in this server */
 	members: Array<ServerMember>;
+	/** The invites associated with this server (id) */
+	invites: Array<string>;
+	/** The channels associated with this server */
+	channels: Array<string>;
 	constructor(id: string, data: ServerProperties) {
 		this.id = id;
 		this.load(data);
@@ -100,8 +107,13 @@ export default class Server {
 
 	/**
 	 * Convert this server object into a JSON representation.
+	 *
+	 * @param {boolean} [fetch=false] - If we should fetch some entities related to this server.
 	 */
-	toJSON(): PublicServer & { createdAt: string; } {
+	toJSON(fetch: true): Promise<PublicServerFetched>;
+	toJSON(fetch?: false): PublicServer;
+	toJSON(fetch?: boolean): PublicServer | Promise<PublicServerFetched>;
+	toJSON(fetch = false): PublicServer | Promise<PublicServerFetched> {
 		const t = Functions.toJSON(
 			this,
 			[
@@ -112,12 +124,14 @@ export default class Server {
 				"icon"
 			],
 			[],
-			false
+			!fetch
 		);
 		Object.defineProperty(t, "createdAt", {
 			value: new Date(Snowflake.decode(this.id).timestamp).toISOString()
 		});
-		return t as typeof t & { createdAt: string; };
+		return fetch ? Promise.resolve(async () => ({
+			...t as PublicServer
+		} as PublicServerFetched)).then((f) => f()) : t as PublicServer;
 	}
 
 	static isServer(obj: unknown): obj is Server {
@@ -129,7 +143,7 @@ export default class Server {
 
 	static async new(data: CreateServerOptions, addOwner = false, idOverride?: string) {
 		// id override should NOT be used in production
-		if (config.dev === false && idOverride) throw new TypeError("id override used in production.");
+		if (config.dev === false && idOverride) throw new TypeError("Server.new#idOverride used in production.");
 		const id = idOverride ?? Snowflake.generate();
 
 		return db.collection("servers").insertOne(
@@ -215,6 +229,22 @@ export default class Server {
 
 		return true;
 	}
+
+	async getInvites() {
+		return Server.getServerInvites(this);
+	}
+	static async getServerInvites(data: Server | string) {
+		if (!Server.isServer(data)) {
+			const s = await Server.getServer({ id: data });
+			if (s === null) throw new TypeError("Invalid server in Server.getServerInvites");
+			data = s;
+		}
+
+		const inv = await Promise.all(data.invites.map(async (id) => Invite.getInvite({ id })));
+
+		return inv;
+	}
 }
 
-export type PublicServer = Pick<Server, "id" | "name" | "icon" | "owner">;
+export type PublicServer = Pick<Server, "id" | "name" | "icon" | "owner" | "features"> & { createdAt: string; };
+export type PublicServerFetched = PublicServer & { channels: never; };

@@ -17,6 +17,7 @@ export default class User {
 		id: null,
 		flags: 0,
 		handle: null,
+		handleDisplay: null,
 		email: null,
 		name: null,
 		bot: false,
@@ -37,8 +38,10 @@ export default class User {
 	id: string;
 	/** the account flags this user has */
 	flags: number;
-	/** the handle of this user */
+	/** the handle of this user, lowercased */
 	handle: string;
+	/** the handle of this user, as provided by the user */
+	handleDisplay: string;
 	/** the email of this user */
 	email: string | null;
 	/** the (user)name of this user */
@@ -115,6 +118,8 @@ export default class User {
 				User.DEFAULTS
 			)
 		);
+		if (this.handleDisplay === null) this.handleDisplay = this.handle;
+		if (this.name === null) this.name = this.handleDisplay;
 	}
 
 	async refresh() {
@@ -161,9 +166,9 @@ export default class User {
 		});
 	}
 
-	async createAuthToken(ip: string, userAgent?: string/* , override?: string */) {
-		/* if (config.dev === false && override) throw new TypeError("User.createAuthToken override used in production"); */
-		const token = /* override ??  */crypto.randomBytes(32).toString("hex");
+	async createAuthToken(ip: string, userAgent?: string, override?: string) {
+		if (config.dev === false && override) throw new TypeError("User.createAuthToken override used in production");
+		const token = override ?? crypto.randomBytes(32).toString("hex");
 		let d: User["authTokens"][number]["device"];
 		if (userAgent !== undefined) {
 			const { browser, os, device } = new UserAgent(userAgent).getResult();
@@ -220,9 +225,9 @@ export default class User {
 	 *
 	 * @param {boolean} [privateProps=false] - If we should return more private properties.
 	 */
-	toJSON(privateProps: true): PrivateUser & { createdAt: string; };
-	toJSON(privateProps?: false): PublicUser & { createdAt: string; };
-	toJSON(privateProps?: boolean): (PrivateUser | PublicUser) & { createdAt: string; };
+	toJSON(privateProps: true): PrivateUser
+	toJSON(privateProps?: false): PublicUser;
+	toJSON(privateProps?: boolean): (PrivateUser | PublicUser);
 	toJSON(privateProps = false) {
 		const t = Functions.toJSON(
 			this,
@@ -231,6 +236,7 @@ export default class User {
 				"avatar",
 				"flags",
 				"handle",
+				"handleDisplay",
 				"name"
 			],
 			[
@@ -264,7 +270,7 @@ export default class User {
 
 	static async new(data: CreateUserOptions, idOverride?: string) {
 		// id override should NOT be used in production
-		if (config.dev === false && idOverride) throw new TypeError("id override used in production.");
+		if (config.dev === false && idOverride) throw new TypeError("User.new#idOverride used in production.");
 		const id = idOverride ?? Snowflake.generate();
 
 		return db.collection("users").insertOne(
@@ -429,5 +435,5 @@ export default class User {
 	}
 }
 
-export type PublicUser = Pick<User, "id" | "avatar" | "flags" | "handle" | "name">;
-export type PrivateUser = Pick<User, keyof PublicUser | "email" | "emailVerified" | "connections" | "mfaEnabled" | "mfaVerified">;
+export type PublicUser = Pick<User, "id" | "avatar" | "flags" | "handle" | "handleDisplay" | "name"> & { createdAt: string; };
+export type PrivateUser = Pick<User, Exclude<keyof PublicUser, "createdAt"> | "email" | "emailVerified" | "connections" | "mfaEnabled" | "mfaVerified"> & { createdAt: string; };

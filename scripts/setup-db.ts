@@ -1,8 +1,71 @@
 import { mdb } from "../src/db";
-import { Server, User } from "../src/db/models";
+import { Invite, Server, User } from "../src/db/models";
 import { USER_FLAGS } from "../src/util/Constants/General";
 
 const drop = true;
+
+async function setupChannels() {
+	const col = mdb.collection("channels");
+	if (!drop) await col.dropIndexes().then(() => console.log(`Dropped all of the indexes on \`${mdb.databaseName}\`.\`channels\`.`));
+	await col.createIndexes([
+		{
+			name: "id",
+			key: {
+				id: 1
+			},
+			unique: true
+		},
+		{
+			name: "serverId",
+			key: {
+				serverId: 1
+			},
+			unique: false
+		},
+		{
+			name: "type",
+			key: {
+				type: 1
+			},
+			unique: false
+		}
+	]);
+}
+
+async function setupInvites() {
+	const col = mdb.collection("invites");
+	if (!drop) await col.dropIndexes().then(() => console.log(`Dropped all of the indexes on \`${mdb.databaseName}\`.\`invites\`.`));
+	await col.createIndexes([
+		{
+			name: "id",
+			key: {
+				id: 1
+			},
+			unique: true
+		},
+		{
+			name: "code",
+			key: {
+				code: 1
+			},
+			unique: true
+		},
+		{
+			name: "serverId",
+			key: {
+				serverId: 1
+			},
+			unique: false
+		},
+		{
+			name: "expire",
+			key: {
+				expire: 1
+			},
+			unique: false
+		}
+	]);
+}
 
 async function setupServers() {
 	const col = mdb.collection("servers");
@@ -100,6 +163,8 @@ process.nextTick(async () => {
 	}
 
 
+	await setupChannels().then(() => console.log(`\`${mdb.databaseName}\`.\`channels\` setup successfully.`));
+	await setupInvites().then(() => console.log(`\`${mdb.databaseName}\`.\`invites\` setup successfully.`));
 	await setupServers().then(() => console.log(`\`${mdb.databaseName}\`.\`servers\` setup successfully.`));
 	await setupUsers().then(() => console.log(`\`${mdb.databaseName}\`.\`users\` setup successfully.`));
 
@@ -115,7 +180,7 @@ process.nextTick(async () => {
 		return u;
 	});
 
-	const token = await user.createAuthToken("0.0.0.0", undefined);
+	const token = await user.createAuthToken("0.0.0.0", undefined, "test");
 
 	console.log("Admin Auth Token:", token);
 
@@ -128,12 +193,18 @@ process.nextTick(async () => {
 			"VERIFIED",
 			"VANITY_URL"
 		]
-	}, "2").then(async (s) => {
+	}, false, "2").then(async (s) => {
 		console.log(`Added test server (id: ${s.id})`);
 		return s;
 	});
 
 	await srv.addMember(user).then(() => console.log(`Added the user @${user.handle} (id: ${user.id}) to ${srv.name} (id: ${srv.id})`));
+
+	const inv = await Invite.new({
+		creator: user.id
+	}, srv, "TEST");
+
+	console.log("Invite Code:", inv.code);
 
 	process.exit(0);
 });

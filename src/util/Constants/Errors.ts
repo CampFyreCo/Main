@@ -212,7 +212,7 @@ export const CLIENT = {
 		message: "The method \"%METHOD%\" is not allowed on this server."
 	},
 	RATE_LIMITED: {
-		code: 439,
+		code: 429,
 		message: "You're doing that action too fast."
 	}
 } as const;
